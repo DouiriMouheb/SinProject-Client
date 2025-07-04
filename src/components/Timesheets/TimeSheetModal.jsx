@@ -1,9 +1,10 @@
-// src/components/Timesheets/TimeSheetModal.jsx - Manual entry creation/editing
+// src/components/Timesheets/TimeSheetModal.jsx - FIXED version with proper data handling
 import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { showToast } from "../../utils/toast";
+import { timerService } from "../../services/timer";
 import { Calendar, Clock, Briefcase, Activity } from "lucide-react";
 
 export const TimeSheetModal = ({
@@ -54,65 +55,39 @@ export const TimeSheetModal = ({
   }, [activities, selectedProject]);
 
   const validateForm = () => {
-    const newErrors = {};
+    // Use the timer service validation
+    const validationErrors = timerService.validateTimeEntryData(timeEntry);
 
-    // Required fields
-    if (!timeEntry?.taskName?.trim()) {
-      newErrors.taskName = "Task name is required";
-    } else if (timeEntry.taskName.trim().length < 2) {
-      newErrors.taskName = "Task name must be at least 2 characters";
+    if (validationErrors.length > 0) {
+      const errorObject = {};
+      validationErrors.forEach((error, index) => {
+        // Map validation errors to field names
+        if (error.includes("Work project")) {
+          errorObject.workProjectId = error;
+        } else if (error.includes("Activity")) {
+          errorObject.activityId = error;
+        } else if (error.includes("Task name")) {
+          errorObject.taskName = error;
+        } else if (error.includes("Date")) {
+          errorObject.date = error;
+        } else if (error.includes("start time")) {
+          errorObject.startTime = error;
+        } else if (error.includes("End time") || error.includes("end time")) {
+          errorObject.endTime = error;
+        } else if (error.includes("Duration")) {
+          errorObject.duration = error;
+        } else {
+          // Generic error
+          errorObject.general = error;
+        }
+      });
+
+      setErrors(errorObject);
+      return false;
     }
 
-    if (!timeEntry?.workProjectId) {
-      newErrors.workProjectId = "Project is required";
-    }
-
-    if (!timeEntry?.activityId) {
-      newErrors.activityId = "Activity is required";
-    }
-
-    if (!timeEntry?.date) {
-      newErrors.date = "Date is required";
-    }
-
-    // Time validation
-    if (!timeEntry?.startTime) {
-      newErrors.startTime = "Start time is required";
-    }
-
-    if (!timeEntry?.endTime) {
-      newErrors.endTime = "End time is required";
-    }
-
-    // Cross-field validation
-    if (timeEntry?.startTime && timeEntry?.endTime) {
-      const start = new Date(`${timeEntry.date}T${timeEntry.startTime}`);
-      const end = new Date(`${timeEntry.date}T${timeEntry.endTime}`);
-
-      if (end <= start) {
-        newErrors.endTime = "End time must be after start time";
-      }
-
-      // Check for reasonable duration (not more than 24 hours)
-      const diffHours = (end - start) / (1000 * 60 * 60);
-      if (diffHours > 24) {
-        newErrors.endTime = "Duration cannot exceed 24 hours";
-      }
-    }
-
-    // Future date validation
-    if (timeEntry?.date) {
-      const entryDate = new Date(timeEntry.date);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // End of today
-
-      if (entryDate > today) {
-        newErrors.date = "Cannot create time entries for future dates";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   const calculateDuration = () => {
@@ -123,25 +98,9 @@ export const TimeSheetModal = ({
     try {
       const start = new Date(`${timeEntry.date}T${timeEntry.startTime}`);
       const end = new Date(`${timeEntry.date}T${timeEntry.endTime}`);
-      const diffMinutes = Math.max(0, (end - start) / (1000 * 60));
-      return Math.round(diffMinutes);
+      return timerService.calculateDuration(start, end);
     } catch (error) {
       return 0;
-    }
-  };
-
-  const formatDuration = (minutes) => {
-    if (!minutes || minutes === 0) return "0 minutes";
-
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-
-    if (hours === 0) {
-      return `${mins} minute${mins !== 1 ? "s" : ""}`;
-    } else if (mins === 0) {
-      return `${hours} hour${hours !== 1 ? "s" : ""}`;
-    } else {
-      return `${hours}h ${mins}m`;
     }
   };
 
@@ -170,21 +129,10 @@ export const TimeSheetModal = ({
         isManual: true,
       };
 
-      // Calculate duration
-      const durationMinutes = calculateDuration();
-      submitData.durationMinutes = durationMinutes;
-
-      // For backend compatibility, convert to datetime strings
-      submitData.startTime = new Date(
-        `${timeEntry.date}T${timeEntry.startTime}`
-      ).toISOString();
-      submitData.endTime = new Date(
-        `${timeEntry.date}T${timeEntry.endTime}`
-      ).toISOString();
-
       await onSave(submitData);
     } catch (error) {
       console.error("Error submitting time entry:", error);
+      showToast.error("Failed to save time entry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +144,11 @@ export const TimeSheetModal = ({
     // Clear error for this field when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+
+    // Clear general errors
+    if (errors.general) {
+      setErrors((prev) => ({ ...prev, general: "" }));
     }
   };
 
@@ -217,6 +170,32 @@ export const TimeSheetModal = ({
 
   // Get current date for default
   const today = new Date().toISOString().split("T")[0];
+
+  // Parse existing time entry data for editing
+  const getDisplayValues = () => {
+    if (!timeEntry) return { date: today, startTime: "", endTime: "" };
+
+    // If editing an existing entry, extract date and time components
+    if (timeEntry.startTime && timeEntry.endTime && !timeEntry.date) {
+      const startDate = new Date(timeEntry.startTime);
+      const endDate = new Date(timeEntry.endTime);
+
+      return {
+        date: startDate.toISOString().split("T")[0],
+        startTime: startDate.toTimeString().slice(0, 5),
+        endTime: endDate.toTimeString().slice(0, 5),
+      };
+    }
+
+    // For new entries or entries with separate date/time
+    return {
+      date: timeEntry.date || today,
+      startTime: timeEntry.startTime || "",
+      endTime: timeEntry.endTime || "",
+    };
+  };
+
+  const displayValues = getDisplayValues();
 
   return (
     <Modal
@@ -250,6 +229,13 @@ export const TimeSheetModal = ({
       }
     >
       <div className="space-y-6 max-h-96 overflow-y-auto">
+        {/* General Error Display */}
+        {errors.general && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{errors.general}</p>
+          </div>
+        )}
+
         {/* Task Information */}
         <div className="space-y-4">
           <Input
@@ -359,7 +345,7 @@ export const TimeSheetModal = ({
             <div className="relative">
               <input
                 type="date"
-                value={timeEntry?.date || today}
+                value={displayValues.date}
                 onChange={(e) => handleInputChange("date", e.target.value)}
                 disabled={isReadOnly}
                 max={today}
@@ -381,7 +367,7 @@ export const TimeSheetModal = ({
             <div className="relative">
               <input
                 type="time"
-                value={timeEntry?.startTime || ""}
+                value={displayValues.startTime}
                 onChange={(e) => handleInputChange("startTime", e.target.value)}
                 disabled={isReadOnly}
                 className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
@@ -402,7 +388,7 @@ export const TimeSheetModal = ({
             <div className="relative">
               <input
                 type="time"
-                value={timeEntry?.endTime || ""}
+                value={displayValues.endTime}
                 onChange={(e) => handleInputChange("endTime", e.target.value)}
                 disabled={isReadOnly}
                 className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
@@ -423,9 +409,17 @@ export const TimeSheetModal = ({
             <div className="flex items-center">
               <Clock className="h-4 w-4 text-blue-500 mr-2" />
               <div className="text-sm text-blue-700">
-                <strong>Duration:</strong> {formatDuration(duration)}
+                <strong>Duration:</strong>{" "}
+                {timerService.formatDuration(duration)}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Duration error display */}
+        {errors.duration && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{errors.duration}</p>
           </div>
         )}
 

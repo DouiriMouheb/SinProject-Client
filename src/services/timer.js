@@ -1,4 +1,4 @@
-// src/services/timer.js - Timer service for API integration
+// src/services/timer.js - FIXED version with proper data handling
 import { apiClient } from "./api";
 
 export const timerService = {
@@ -25,7 +25,15 @@ export const timerService = {
   // Start a new timer
   async startTimer(timerData) {
     try {
-      const response = await apiClient.post("/timer/start", timerData);
+      // Backend expects: workProjectId, activityId, taskName, description
+      const cleanTimerData = {
+        workProjectId: timerData.workProjectId,
+        activityId: timerData.activityId,
+        taskName: timerData.taskName || "",
+        description: timerData.description || "",
+      };
+
+      const response = await apiClient.post("/timer/start", cleanTimerData);
 
       if (response.success) {
         return response;
@@ -138,7 +146,30 @@ export const timerService = {
   // Update time entry
   async updateTimeEntry(id, entryData) {
     try {
-      const response = await apiClient.put(`/timer/entries/${id}`, entryData);
+      // Clean the data - only send fields that can be updated
+      const updateData = {};
+
+      if (entryData.taskName !== undefined) {
+        updateData.taskName = entryData.taskName;
+      }
+
+      if (entryData.description !== undefined) {
+        updateData.description = entryData.description;
+      }
+
+      if (entryData.startTime !== undefined) {
+        updateData.startTime = entryData.startTime;
+      }
+
+      if (entryData.endTime !== undefined) {
+        updateData.endTime = entryData.endTime;
+      }
+
+      if (entryData.durationMinutes !== undefined) {
+        updateData.durationMinutes = entryData.durationMinutes;
+      }
+
+      const response = await apiClient.put(`/timer/entries/${id}`, updateData);
 
       if (response.success) {
         return response;
@@ -155,17 +186,49 @@ export const timerService = {
     }
   },
 
-  // Create manual time entry
+  // Create manual time entry - FIXED data transformation
   async createManualEntry(entryData) {
     try {
-      // For manual entries, we'll use the regular time entry creation
-      // but mark it as manual and include start/end times
-      const manualData = {
-        ...entryData,
-        isManual: true,
+      // Transform frontend data to backend format
+      const backendData = {
+        workProjectId: entryData.workProjectId,
+        activityId: entryData.activityId,
+        taskName: entryData.taskName,
+        description: entryData.description || "",
       };
 
-      const response = await apiClient.post("/timer/entries", manualData);
+      // Handle date/time transformation
+      if (entryData.date && entryData.startTime && entryData.endTime) {
+        // Frontend sends separate date and time, combine them
+        backendData.startTime = new Date(
+          `${entryData.date}T${entryData.startTime}`
+        ).toISOString();
+        backendData.endTime = new Date(
+          `${entryData.date}T${entryData.endTime}`
+        ).toISOString();
+
+        // Calculate duration in minutes
+        const start = new Date(backendData.startTime);
+        const end = new Date(backendData.endTime);
+        backendData.durationMinutes = Math.floor((end - start) / (1000 * 60));
+      } else if (entryData.startTime && entryData.endTime) {
+        // Frontend already sends full datetime strings
+        backendData.startTime = entryData.startTime;
+        backendData.endTime = entryData.endTime;
+
+        if (entryData.durationMinutes) {
+          backendData.durationMinutes = entryData.durationMinutes;
+        }
+      } else {
+        throw new Error(
+          "Start time and end time are required for manual entries"
+        );
+      }
+
+      // Mark as manual
+      backendData.isManual = true;
+
+      const response = await apiClient.post("/timer/entries", backendData);
 
       if (response.success) {
         return response;
@@ -182,7 +245,7 @@ export const timerService = {
     }
   },
 
-  // Delete time entry
+  // Delete time entry - NOW SUPPORTED
   async deleteTimeEntry(id) {
     try {
       const response = await apiClient.delete(`/timer/entries/${id}`);
@@ -253,6 +316,103 @@ export const timerService = {
         code: error.code || "FETCH_ERROR",
         type: error.type || "server",
       };
+    }
+  },
+
+  // Helper method to validate time entry data before sending
+  validateTimeEntryData(entryData) {
+    const errors = [];
+
+    if (!entryData.workProjectId) {
+      errors.push("Work project is required");
+    }
+
+    if (!entryData.activityId) {
+      errors.push("Activity is required");
+    }
+
+    if (!entryData.taskName || entryData.taskName.trim().length === 0) {
+      errors.push("Task name is required");
+    }
+
+    if (entryData.taskName && entryData.taskName.trim().length < 2) {
+      errors.push("Task name must be at least 2 characters");
+    }
+
+    // For manual entries
+    if (
+      entryData.isManual ||
+      (entryData.date && entryData.startTime && entryData.endTime)
+    ) {
+      if (!entryData.date && (!entryData.startTime || !entryData.endTime)) {
+        errors.push(
+          "Date, start time, and end time are required for manual entries"
+        );
+      }
+
+      if (entryData.date && entryData.startTime && entryData.endTime) {
+        const start = new Date(`${entryData.date}T${entryData.startTime}`);
+        const end = new Date(`${entryData.date}T${entryData.endTime}`);
+
+        if (end <= start) {
+          errors.push("End time must be after start time");
+        }
+
+        // Check for reasonable duration (not more than 24 hours)
+        const diffHours = (end - start) / (1000 * 60 * 60);
+        if (diffHours > 24) {
+          errors.push("Duration cannot exceed 24 hours");
+        }
+
+        if (diffHours < 0.0167) {
+          // Less than 1 minute
+          errors.push("Duration must be at least 1 minute");
+        }
+      }
+
+      // Check for future dates
+      if (entryData.date) {
+        const entryDate = new Date(entryData.date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+
+        if (entryDate > today) {
+          errors.push("Cannot create time entries for future dates");
+        }
+      }
+    }
+
+    return errors;
+  },
+
+  // Helper method to format duration for display
+  formatDuration(minutes) {
+    if (!minutes || minutes === 0) return "0 minutes";
+
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    if (hours === 0) {
+      return `${mins} minute${mins !== 1 ? "s" : ""}`;
+    } else if (mins === 0) {
+      return `${hours} hour${hours !== 1 ? "s" : ""}`;
+    } else {
+      return `${hours}h ${mins}m`;
+    }
+  },
+
+  // Helper method to calculate duration between two times
+  calculateDuration(startTime, endTime) {
+    if (!startTime || !endTime) return 0;
+
+    try {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const diffMinutes = Math.max(0, (end - start) / (1000 * 60));
+      return Math.round(diffMinutes);
+    } catch (error) {
+      console.error("Error calculating duration:", error);
+      return 0;
     }
   },
 };
