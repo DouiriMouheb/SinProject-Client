@@ -7,26 +7,11 @@ import { LoginPage } from "./components/auth/LoginPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { TimeSheetList } from "./components/Timesheets/TimeSheetList";
 import { Users } from "./components/users/Users";
+import { Customers } from "./components/Customers/Customers";
 import { Settings } from "./components/settings/Settings";
 import { toastConfig } from "./utils/toast";
 
 // Placeholder components for new admin routes
-const Customers = () => (
-  <div>
-    <h1 className="text-3xl font-bold text-gray-900 mb-8">
-      Customer Management
-    </h1>
-    <div className="bg-white shadow rounded-lg p-6">
-      <p className="text-gray-600">
-        Customer management functionality will be implemented here.
-      </p>
-      <p className="text-sm text-gray-500 mt-2">
-        This section is only accessible by administrators.
-      </p>
-    </div>
-  </div>
-);
-
 const Process = () => (
   <div>
     <h1 className="text-3xl font-bold text-gray-900 mb-8">

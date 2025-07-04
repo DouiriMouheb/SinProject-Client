@@ -15,11 +15,15 @@ import {
   Activity,
   LogIn,
   AlertTriangle,
+  Download,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../common/Button";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { userService } from "../../services/users";
+import { timesheetService } from "../../services/timesheet";
+import { generateTimesheetPDF } from "../../utils/pdfGenerator";
 import { showToast } from "../../utils/toast";
 import { ProfilePicture } from "../common/ProfilePicture"; // ADDED: Import ProfilePicture
 
@@ -93,6 +97,9 @@ export const UserDetails = ({
   // FIXED: Added state for confirmation modals instead of window.confirm()
   const [showStatusModal, setShowStatusModal] = useState(false);
 
+  // Timesheet download states
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
   const { user: currentUser, hasRole } = useAuth();
 
   useEffect(() => {
@@ -144,6 +151,63 @@ export const UserDetails = ({
     } finally {
       setActionLoading(null);
       setShowStatusModal(false);
+    }
+  };
+
+  // Download timesheet PDF
+  const downloadTimesheetPDF = async () => {
+    if (!user || downloadingPDF) return;
+
+    setDownloadingPDF(true);
+
+    try {
+      showToast.loading("Checking timesheet entries...");
+
+      // Get timesheet data for the user
+      const response = await timesheetService.getUserTimeEntriesById(userId, {
+        limit: 1000, // Get all entries
+      });
+
+      if (response.success && response.data) {
+        const timesheets = response.data.entries || [];
+
+        if (timesheets.length === 0) {
+          showToast.dismiss(); // Dismiss loading toast
+          showToast.warning(
+            "No timesheet entries found for this user. Nothing to generate."
+          );
+          return;
+        }
+
+        // Update loading message when we start generating
+        showToast.loading("Generating timesheet PDF...");
+
+        // Generate PDF
+        const filename = generateTimesheetPDF(user, timesheets);
+        showToast.dismiss(); // Dismiss loading toast
+        showToast.success(`Timesheet PDF downloaded: ${filename}`);
+      } else {
+        showToast.dismiss(); // Dismiss loading toast
+        showToast.error("Failed to fetch timesheet data from server");
+      }
+    } catch (err) {
+      console.error("Error downloading timesheet PDF:", err);
+
+      // Dismiss loading toast first
+      showToast.dismiss();
+
+      // More specific error messages
+      if (err.message.includes("No timesheet entries")) {
+        showToast.warning("No timesheet entries available to generate PDF");
+      } else if (err.message.includes("User information")) {
+        showToast.error("User information missing - cannot generate PDF");
+      } else if (err.message.includes("Valid timesheet data")) {
+        showToast.error("Invalid timesheet data received from server");
+      } else {
+        showToast.error("Failed to generate timesheet PDF");
+      }
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -224,9 +288,9 @@ export const UserDetails = ({
               </div>
             </div>
 
-            {/* Edit button - moved below name and responsive */}
-            {canEdit() && (
-              <div className="flex justify-start">
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-3">
+              {canEdit() && (
                 <Button
                   onClick={() => onEdit(user)}
                   variant="secondary"
@@ -235,8 +299,30 @@ export const UserDetails = ({
                   <Edit className="h-4 w-4 mr-2" />
                   Edit User
                 </Button>
-              </div>
-            )}
+              )}
+
+              {/* Download Timesheet button - available for managers/admins */}
+              {(hasRole("manager") || hasRole("admin")) && (
+                <Button
+                  onClick={downloadTimesheetPDF}
+                  variant="secondary"
+                  size="sm"
+                  disabled={downloadingPDF}
+                >
+                  {downloadingPDF ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Timesheet
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -272,6 +272,69 @@ export const showToast = {
     },
   },
 
+  // Customer-specific messages
+  customer: {
+    created: () => {
+      return showToast.success("Customer created successfully", {
+        duration: 4000,
+        icon: "🏢",
+      });
+    },
+
+    updated: () => {
+      return showToast.success("Customer updated successfully", {
+        duration: 3000,
+        icon: "✏️",
+      });
+    },
+
+    deleted: () => {
+      return showToast.success("Customer deleted successfully", {
+        duration: 3000,
+        icon: "🗑️",
+      });
+    },
+
+    activated: (customerName) => {
+      return showToast.success(
+        `Customer "${customerName}" has been activated`,
+        {
+          duration: 4000,
+          icon: "✅",
+        }
+      );
+    },
+
+    deactivated: (customerName) => {
+      return showToast.warning(
+        `Customer "${customerName}" has been deactivated`,
+        {
+          duration: 4000,
+          icon: "⏸️",
+        }
+      );
+    },
+
+    statusChanged: (isActive) => {
+      return isActive
+        ? showToast.success("Customer activated successfully", {
+            duration: 3000,
+            icon: "✅",
+          })
+        : showToast.warning("Customer deactivated successfully", {
+            duration: 3000,
+            icon: "⏸️",
+          });
+    },
+
+    error: (message = "Customer operation failed") => {
+      return showToast.error(message, {
+        duration: 5000,
+        icon: "🏢",
+      });
+    },
+  },
+
   // System/Network messages
   system: {
     offline: () => {
