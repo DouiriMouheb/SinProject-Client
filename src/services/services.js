@@ -117,6 +117,5 @@ export const getResourceStats = async (endpoint, timeframe = "30d") => {
 
 // Export all service implementations
 
-export { ticketService } from "./tickets";
 export { userService } from "./users";
 export { authService } from "./auth";
