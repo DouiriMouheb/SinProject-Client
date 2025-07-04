@@ -21,6 +21,14 @@ export const TimeSheetModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [filteredActivities, setFilteredActivities] = useState([]);
+  
+  // New state for customer/process selection
+  const [selectionType, setSelectionType] = useState(""); // "customer" or "process"
+  const [customers, setCustomers] = useState([]);
+  const [processes, setProcesses] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedProcess, setSelectedProcess] = useState(null);
+  const [filteredProjects, setFilteredProjects] = useState([]);
 
   const isReadOnly = mode === "view";
   const isCreating = mode === "create";
@@ -37,7 +45,32 @@ export const TimeSheetModal = ({
   useEffect(() => {
     setErrors({});
     setIsSubmitting(false);
+    if (isOpen) {
+      loadCustomersAndProcesses();
+    }
   }, [isOpen, mode]);
+
+  // Load customers and processes data
+  const loadCustomersAndProcesses = async () => {
+    try {
+      // Extract unique customers from projects
+      const uniqueCustomers = projects.reduce((acc, project) => {
+        if (project.customer && !acc.find(c => c.id === project.customer.id)) {
+          acc.push(project.customer);
+        }
+        return acc;
+      }, []);
+      setCustomers(uniqueCustomers);
+
+      // Load processes from the timer service
+      const response = await timerService.getProjectsAndActivities();
+      if (response.success) {
+        setProcesses(response.data.processes || []);
+      }
+    } catch (error) {
+      console.error("Error loading customers and processes:", error);
+    }
+  };
 
   useEffect(() => {
     if (timeEntry?.workProjectId) {
@@ -49,10 +82,25 @@ export const TimeSheetModal = ({
   }, [timeEntry?.workProjectId, projects]);
 
   useEffect(() => {
-    // Filter activities based on selected project if needed
-    // For now, show all activities since we don't have project-activity mapping
-    setFilteredActivities(activities);
-  }, [activities, selectedProject]);
+    // Filter activities based on selection type
+    if (selectionType === "process" && selectedProcess) {
+      setFilteredActivities(selectedProcess.activities || []);
+    } else {
+      setFilteredActivities(activities);
+    }
+  }, [activities, selectedProcess, selectionType]);
+
+  // Update filtered projects when customer is selected
+  useEffect(() => {
+    if (selectionType === "customer" && selectedCustomer) {
+      const customerProjects = projects.filter(
+        project => project.customer && project.customer.id === selectedCustomer.id
+      );
+      setFilteredProjects(customerProjects);
+    } else {
+      setFilteredProjects(projects);
+    }
+  }, [selectedCustomer, projects, selectionType]);
 
   const validateForm = () => {
     // Use the timer service validation
@@ -166,6 +214,53 @@ export const TimeSheetModal = ({
     }
   };
 
+  // Handle selection type change
+  const handleSelectionTypeChange = (type) => {
+    setSelectionType(type);
+    setSelectedCustomer(null);
+    setSelectedProcess(null);
+    
+    // Clear project and activity selections
+    onChange({
+      ...timeEntry,
+      workProjectId: "",
+      activityId: "",
+    });
+    
+    // Clear related errors
+    setErrors((prev) => ({ 
+      ...prev, 
+      workProjectId: "", 
+      activityId: "",
+      selectionType: ""
+    }));
+  };
+
+  // Handle customer selection
+  const handleCustomerChange = (customerId) => {
+    const customer = customers.find(c => c.id === customerId);
+    setSelectedCustomer(customer);
+    
+    // Clear project and activity selections
+    onChange({
+      ...timeEntry,
+      workProjectId: "",
+      activityId: "",
+    });
+  };
+
+  // Handle process selection
+  const handleProcessChange = (processId) => {
+    const process = processes.find(p => p.id === processId);
+    setSelectedProcess(process);
+    
+    // Clear activity selection
+    onChange({
+      ...timeEntry,
+      activityId: "",
+    });
+  };
+
   const duration = calculateDuration();
 
   // Get current date for default
@@ -266,74 +361,182 @@ export const TimeSheetModal = ({
         </div>
 
         {/* Project and Activity Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* Selection Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project *
+              Selection Method *
             </label>
             <div className="relative">
               <select
-                value={timeEntry?.workProjectId || ""}
-                onChange={(e) => handleProjectChange(e.target.value)}
+                value={selectionType}
+                onChange={(e) => handleSelectionTypeChange(e.target.value)}
                 disabled={isReadOnly}
                 className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.workProjectId ? "border-red-300" : "border-gray-300"
+                  errors.selectionType ? "border-red-300" : "border-gray-300"
                 } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
               >
-                <option value="">Select a project...</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                    {project.customer && ` (${project.customer.name})`}
-                  </option>
-                ))}
-              </select>
-              <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            </div>
-            {errors.workProjectId && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.workProjectId}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Activity *
-            </label>
-            <div className="relative">
-              <select
-                value={timeEntry?.activityId || ""}
-                onChange={(e) =>
-                  handleInputChange("activityId", e.target.value)
-                }
-                disabled={isReadOnly || !timeEntry?.workProjectId}
-                className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.activityId ? "border-red-300" : "border-gray-300"
-                } ${
-                  isReadOnly || !timeEntry?.workProjectId
-                    ? "bg-gray-100"
-                    : "bg-white"
-                }`}
-              >
-                <option value="">Select an activity...</option>
-                {filteredActivities.map((activity) => (
-                  <option key={activity.id} value={activity.id}>
-                    {activity.name}
-                  </option>
-                ))}
+                <option value="">Choose selection method...</option>
+                <option value="customer">Select by Customer</option>
+                <option value="process">Select by Process</option>
               </select>
               <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
-            {errors.activityId && (
-              <p className="mt-1 text-sm text-red-600">{errors.activityId}</p>
-            )}
-            {!timeEntry?.workProjectId && (
-              <p className="mt-1 text-xs text-gray-500">
-                Select a project first
-              </p>
+            {errors.selectionType && (
+              <p className="mt-1 text-sm text-red-600">{errors.selectionType}</p>
             )}
           </div>
+
+          {/* Customer Selection Flow */}
+          {selectionType === "customer" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer *
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedCustomer?.id || ""}
+                    onChange={(e) => handleCustomerChange(e.target.value)}
+                    disabled={isReadOnly}
+                    className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.customerId ? "border-red-300" : "border-gray-300"
+                    } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
+                  >
+                    <option value="">Select a customer...</option>
+                    {customers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+                {errors.customerId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.customerId}</p>
+                )}
+              </div>
+
+              {selectedCustomer && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Project *
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={timeEntry?.workProjectId || ""}
+                      onChange={(e) => handleProjectChange(e.target.value)}
+                      disabled={isReadOnly}
+                      className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.workProjectId ? "border-red-300" : "border-gray-300"
+                      } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
+                    >
+                      <option value="">Select a project...</option>
+                      {filteredProjects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.workProjectId && (
+                    <p className="mt-1 text-sm text-red-600">{errors.workProjectId}</p>
+                  )}
+                </div>
+              )}
+
+              {selectedCustomer && timeEntry?.workProjectId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Activity *
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={timeEntry?.activityId || ""}
+                      onChange={(e) => handleInputChange("activityId", e.target.value)}
+                      disabled={isReadOnly}
+                      className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.activityId ? "border-red-300" : "border-gray-300"
+                      } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
+                    >
+                      <option value="">Select an activity...</option>
+                      {filteredActivities.map((activity) => (
+                        <option key={activity.id} value={activity.id}>
+                          {activity.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.activityId && (
+                    <p className="mt-1 text-sm text-red-600">{errors.activityId}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Process Selection Flow */}
+          {selectionType === "process" && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Process *
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedProcess?.id || ""}
+                    onChange={(e) => handleProcessChange(e.target.value)}
+                    disabled={isReadOnly}
+                    className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.processId ? "border-red-300" : "border-gray-300"
+                    } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
+                  >
+                    <option value="">Select a process...</option>
+                    {processes.map((process) => (
+                      <option key={process.id} value={process.id}>
+                        {process.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+                {errors.processId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.processId}</p>
+                )}
+              </div>
+
+              {selectedProcess && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Activity *
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={timeEntry?.activityId || ""}
+                      onChange={(e) => handleInputChange("activityId", e.target.value)}
+                      disabled={isReadOnly}
+                      className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.activityId ? "border-red-300" : "border-gray-300"
+                      } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
+                    >
+                      <option value="">Select an activity...</option>
+                      {filteredActivities.map((activity) => (
+                        <option key={activity.id} value={activity.id}>
+                          {activity.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  </div>
+                  {errors.activityId && (
+                    <p className="mt-1 text-sm text-red-600">{errors.activityId}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Date and Time */}

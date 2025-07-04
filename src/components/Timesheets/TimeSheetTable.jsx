@@ -139,20 +139,20 @@ export const TimeSheetTable = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Task & Project
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date & Time
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20 md:w-auto">
                 Duration
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               {showUser && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User
                 </th>
               )}
@@ -175,8 +175,8 @@ export const TimeSheetTable = ({
                     }`}
                     onClick={() => toggleExpanded(entryId)}
                   >
-                    {/* Task & Project */}
-                    <td className="px-6 py-4">
+                    {/* Task & Project - Hidden on mobile */}
+                    <td className="hidden md:table-cell px-6 py-4">
                       <div className="flex items-start space-x-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
@@ -211,7 +211,7 @@ export const TimeSheetTable = ({
                       </div>
                     </td>
 
-                    {/* Date & Time */}
+                    {/* Date & Time - Enhanced for mobile */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm">
                         <div className="flex items-center text-gray-900">
@@ -223,18 +223,29 @@ export const TimeSheetTable = ({
                           {formatTime(entry.startTime)} -{" "}
                           {formatTime(entry.endTime)}
                         </div>
+                        {/* Show task name on mobile only */}
+                        <div className="md:hidden mt-2 text-xs">
+                          <p className="font-medium text-gray-900 truncate">
+                            {entry.taskName}
+                          </p>
+                          {entry.isManual && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                              Manual
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 
                     {/* Duration */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 md:px-6 py-4 whitespace-nowrap w-20 md:w-auto text-center">
                       <div className="text-sm text-gray-900 font-mono">
                         {formatDuration(entry.durationMinutes)}
                       </div>
                     </td>
 
-                    {/* Status */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Status - Hidden on mobile */}
+                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <StatusIcon className="h-4 w-4 mr-2" />
                         <span
@@ -251,9 +262,9 @@ export const TimeSheetTable = ({
                       </div>
                     </td>
 
-                    {/* User (for admin/manager views) */}
+                    {/* User (for admin/manager views) - Hidden on mobile */}
                     {showUser && (
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <ProfilePicture
                             user={entry.user}
@@ -313,7 +324,7 @@ export const TimeSheetTable = ({
                   {/* Expanded Row */}
                   {isExpanded && (
                     <tr className="bg-blue-50">
-                      <td colSpan={showUser ? 6 : 5} className="px-6 py-4">
+                      <td colSpan={showUser ? 6 : 5} className="hidden md:table-cell px-6 py-4">
                         <div className="max-w-4xl">
                           {/* Description */}
                           {entry.description && (
@@ -394,6 +405,48 @@ export const TimeSheetTable = ({
                                       : " Timer is paused."}
                                   </p>
                                 </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      {/* Mobile expanded view */}
+                      <td colSpan="3" className="md:hidden px-6 py-4">
+                        <div className="space-y-3">
+                          {/* Task and Project Info */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">Project & Activity</h4>
+                            <div className="text-sm text-gray-700">
+                              <div className="flex items-center">
+                                <Briefcase className="h-3 w-3 mr-1" />
+                                <span>{entry.workProject?.name || "Unknown Project"}</span>
+                              </div>
+                              <div className="ml-4 text-xs text-gray-500">
+                                {entry.activity?.name || "Unknown Activity"}
+                              </div>
+                              {entry.workProject?.customer?.name && (
+                                <div className="ml-4 text-xs text-gray-500">
+                                  Customer: {entry.workProject.customer.name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          {entry.description && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 mb-1">Description</h4>
+                              <p className="text-sm text-gray-700">{entry.description}</p>
+                            </div>
+                          )}
+
+                          {/* User info if shown */}
+                          {showUser && entry.user && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 mb-1">User</h4>
+                              <div className="flex items-center">
+                                <ProfilePicture user={entry.user} size="sm" className="mr-2" />
+                                <span className="text-sm text-gray-700">{entry.user.name}</span>
                               </div>
                             </div>
                           )}
