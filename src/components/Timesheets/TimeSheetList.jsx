@@ -122,9 +122,13 @@ export const TimeSheetList = () => {
             return acc;
           }, []) || [];
         setCustomers(uniqueCustomers);
+      } else {
+        console.error("Failed to load projects:", response);
+        showToast.error("Failed to load projects");
       }
     } catch (error) {
       console.error("Error loading projects:", error);
+      showToast.error(`Error loading projects: ${error.message}`);
     }
   };
 
@@ -141,9 +145,13 @@ export const TimeSheetList = () => {
             return acc;
           }, []) || [];
         setActivities(allActivities);
+      } else {
+        console.error("Failed to load activities:", response);
+        showToast.error("Failed to load activities");
       }
     } catch (error) {
       console.error("Error loading activities:", error);
+      showToast.error(`Error loading activities: ${error.message}`);
     }
   };
 
@@ -676,11 +684,7 @@ export const TimeSheetList = () => {
           cancelText="Cancel"
           type="delete"
           isLoading={isDeleting}
-          itemName={
-            entryToDelete
-              ? `${entryToDelete.taskName} (${entryToDelete.durationMinutes}m)`
-              : null
-          }
+          itemName={entryToDelete ? entryToDelete.taskName : null}
         />
       </div>
     </>

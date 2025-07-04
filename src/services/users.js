@@ -14,7 +14,7 @@ export const userService = {
         }
       });
 
-      const endpoint = `/users${
+      const endpoint = `/admin/users${
         queryParams.toString() ? `?${queryParams.toString()}` : ""
       }`;
 
@@ -38,7 +38,8 @@ export const userService = {
   // Get single user by ID
   async getUser(id) {
     try {
-      const response = await apiClient.get(`/users/${id}`);
+      console.log(`Fetching user with ID: ${id}`);
+      const response = await apiClient.get(`/admin/users/${id}`);
 
       if (response.success) {
         return response;

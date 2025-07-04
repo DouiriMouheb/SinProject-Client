@@ -4,7 +4,7 @@ import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { showToast } from "../../utils/toast";
-import { Briefcase, Activity, Play, Clock } from "lucide-react";
+import { Briefcase, Activity, Play } from "lucide-react";
 
 export const TimerStartModal = ({
   isOpen,
@@ -54,10 +54,24 @@ export const TimerStartModal = ({
     setFilteredActivities(activities);
   }, [activities, selectedProject]);
 
-  // No required fields: validation always passes
+  // Validate required fields
   const validateForm = () => {
-    setErrors({});
-    return true;
+    const newErrors = {};
+
+    if (!timerData.workProjectId) {
+      newErrors.workProjectId = "Project is required";
+    }
+
+    if (!timerData.activityId) {
+      newErrors.activityId = "Activity is required";
+    }
+
+    if (!timerData.taskName.trim()) {
+      newErrors.taskName = "Task name is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -111,13 +125,6 @@ export const TimerStartModal = ({
     }
   };
 
-  // Get recent projects for quick selection
-  const getRecentProjects = () => {
-    // For now, just return first few projects
-    // In a real app, this would be based on user's recent activity
-    return projects.slice(0, 3);
-  };
-
   return (
     <Modal
       isOpen={isOpen}
@@ -145,52 +152,14 @@ export const TimerStartModal = ({
       }
     >
       <div className="space-y-6">
-        {/* Quick Start from Recent Projects */}
-        {getRecentProjects().length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quick Start (Recent Projects)
-            </label>
-            <div className="space-y-2">
-              {getRecentProjects().map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => handleProjectChange(project.id)}
-                  className="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {project.name}
-                      </p>
-                      {project.customer && (
-                        <p className="text-xs text-gray-500">
-                          {project.customer.name}
-                        </p>
-                      )}
-                    </div>
-                    <Clock className="h-4 w-4 text-gray-400" />
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 text-center">
-              <span className="text-sm text-gray-500">
-                or select manually below
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Manual Selection */}
         <div className="space-y-4">
           <Input
-            label="Task Name"
+            label="Task Name *"
             type="text"
             value={timerData.taskName}
             onChange={(e) => handleInputChange("taskName", e.target.value)}
-            required={false}
+            required={true}
             error={errors.taskName}
             placeholder="What are you working on?"
             icon={Briefcase}
@@ -214,7 +183,7 @@ export const TimerStartModal = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project
+              Project *
             </label>
             <div className="relative">
               <select
@@ -243,7 +212,7 @@ export const TimerStartModal = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Activity
+              Activity *
             </label>
             <div className="relative">
               <select
@@ -273,47 +242,6 @@ export const TimerStartModal = ({
                 Select a project first
               </p>
             )}
-          </div>
-        </div>
-
-        {/* Selected Project Info */}
-        {selectedProject && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="flex items-start">
-              <Briefcase className="h-4 w-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-700">
-                <p className="font-medium">{selectedProject.name}</p>
-                {selectedProject.customer && (
-                  <p className="text-blue-600">
-                    Client: {selectedProject.customer.name}
-                  </p>
-                )}
-                {selectedProject.description && (
-                  <p className="mt-1 text-blue-600">
-                    {selectedProject.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Timer Info */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-          <div className="flex items-start">
-            <Clock className="h-4 w-4 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-yellow-700">
-              <p className="font-medium">Timer Info</p>
-              <ul className="mt-1 space-y-1 text-yellow-600">
-                <li>
-                  • Timer will start immediately when you click "Start Timer"
-                </li>
-                <li>
-                  • You can pause/resume the timer anytime from the widget above
-                </li>
-                <li>• Remember to stop the timer when you finish your task</li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ export const TimeSheetModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [filteredActivities, setFilteredActivities] = useState([]);
-  
+
   // New state for customer/process selection
   const [selectionType, setSelectionType] = useState(""); // "customer" or "process"
   const [customers, setCustomers] = useState([]);
@@ -55,7 +55,10 @@ export const TimeSheetModal = ({
     try {
       // Extract unique customers from projects
       const uniqueCustomers = projects.reduce((acc, project) => {
-        if (project.customer && !acc.find(c => c.id === project.customer.id)) {
+        if (
+          project.customer &&
+          !acc.find((c) => c.id === project.customer.id)
+        ) {
           acc.push(project.customer);
         }
         return acc;
@@ -94,7 +97,8 @@ export const TimeSheetModal = ({
   useEffect(() => {
     if (selectionType === "customer" && selectedCustomer) {
       const customerProjects = projects.filter(
-        project => project.customer && project.customer.id === selectedCustomer.id
+        (project) =>
+          project.customer && project.customer.id === selectedCustomer.id
       );
       setFilteredProjects(customerProjects);
     } else {
@@ -122,8 +126,6 @@ export const TimeSheetModal = ({
           errorObject.startTime = error;
         } else if (error.includes("End time") || error.includes("end time")) {
           errorObject.endTime = error;
-        } else if (error.includes("Duration")) {
-          errorObject.duration = error;
         } else {
           // Generic error
           errorObject.general = error;
@@ -136,20 +138,6 @@ export const TimeSheetModal = ({
 
     setErrors({});
     return true;
-  };
-
-  const calculateDuration = () => {
-    if (!timeEntry?.startTime || !timeEntry?.endTime || !timeEntry?.date) {
-      return 0;
-    }
-
-    try {
-      const start = new Date(`${timeEntry.date}T${timeEntry.startTime}`);
-      const end = new Date(`${timeEntry.date}T${timeEntry.endTime}`);
-      return timerService.calculateDuration(start, end);
-    } catch (error) {
-      return 0;
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -219,28 +207,28 @@ export const TimeSheetModal = ({
     setSelectionType(type);
     setSelectedCustomer(null);
     setSelectedProcess(null);
-    
+
     // Clear project and activity selections
     onChange({
       ...timeEntry,
       workProjectId: "",
       activityId: "",
     });
-    
+
     // Clear related errors
-    setErrors((prev) => ({ 
-      ...prev, 
-      workProjectId: "", 
+    setErrors((prev) => ({
+      ...prev,
+      workProjectId: "",
       activityId: "",
-      selectionType: ""
+      selectionType: "",
     }));
   };
 
   // Handle customer selection
   const handleCustomerChange = (customerId) => {
-    const customer = customers.find(c => c.id === customerId);
+    const customer = customers.find((c) => c.id === customerId);
     setSelectedCustomer(customer);
-    
+
     // Clear project and activity selections
     onChange({
       ...timeEntry,
@@ -251,17 +239,15 @@ export const TimeSheetModal = ({
 
   // Handle process selection
   const handleProcessChange = (processId) => {
-    const process = processes.find(p => p.id === processId);
+    const process = processes.find((p) => p.id === processId);
     setSelectedProcess(process);
-    
+
     // Clear activity selection
     onChange({
       ...timeEntry,
       activityId: "",
     });
   };
-
-  const duration = calculateDuration();
 
   // Get current date for default
   const today = new Date().toISOString().split("T")[0];
@@ -383,7 +369,9 @@ export const TimeSheetModal = ({
               <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
             {errors.selectionType && (
-              <p className="mt-1 text-sm text-red-600">{errors.selectionType}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.selectionType}
+              </p>
             )}
           </div>
 
@@ -413,7 +401,9 @@ export const TimeSheetModal = ({
                   <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 </div>
                 {errors.customerId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.customerId}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.customerId}
+                  </p>
                 )}
               </div>
 
@@ -428,7 +418,9 @@ export const TimeSheetModal = ({
                       onChange={(e) => handleProjectChange(e.target.value)}
                       disabled={isReadOnly}
                       className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.workProjectId ? "border-red-300" : "border-gray-300"
+                        errors.workProjectId
+                          ? "border-red-300"
+                          : "border-gray-300"
                       } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
                     >
                       <option value="">Select a project...</option>
@@ -441,7 +433,9 @@ export const TimeSheetModal = ({
                     <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   </div>
                   {errors.workProjectId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.workProjectId}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.workProjectId}
+                    </p>
                   )}
                 </div>
               )}
@@ -454,7 +448,9 @@ export const TimeSheetModal = ({
                   <div className="relative">
                     <select
                       value={timeEntry?.activityId || ""}
-                      onChange={(e) => handleInputChange("activityId", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("activityId", e.target.value)
+                      }
                       disabled={isReadOnly}
                       className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                         errors.activityId ? "border-red-300" : "border-gray-300"
@@ -470,7 +466,9 @@ export const TimeSheetModal = ({
                     <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   </div>
                   {errors.activityId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.activityId}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.activityId}
+                    </p>
                   )}
                 </div>
               )}
@@ -503,7 +501,9 @@ export const TimeSheetModal = ({
                   <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 </div>
                 {errors.processId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.processId}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.processId}
+                  </p>
                 )}
               </div>
 
@@ -515,7 +515,9 @@ export const TimeSheetModal = ({
                   <div className="relative">
                     <select
                       value={timeEntry?.activityId || ""}
-                      onChange={(e) => handleInputChange("activityId", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("activityId", e.target.value)
+                      }
                       disabled={isReadOnly}
                       className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                         errors.activityId ? "border-red-300" : "border-gray-300"
@@ -531,7 +533,9 @@ export const TimeSheetModal = ({
                     <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   </div>
                   {errors.activityId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.activityId}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.activityId}
+                    </p>
                   )}
                 </div>
               )}
@@ -606,26 +610,6 @@ export const TimeSheetModal = ({
           </div>
         </div>
 
-        {/* Duration Display */}
-        {duration > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 text-blue-500 mr-2" />
-              <div className="text-sm text-blue-700">
-                <strong>Duration:</strong>{" "}
-                {timerService.formatDuration(duration)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Duration error display */}
-        {errors.duration && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{errors.duration}</p>
-          </div>
-        )}
-
         {/* Read-only info for existing entries */}
         {!isCreating && timeEntry && (
           <div className="pt-4 border-t border-gray-200">
@@ -639,24 +623,6 @@ export const TimeSheetModal = ({
                   {timeEntry.createdAt
                     ? new Date(timeEntry.createdAt).toLocaleString()
                     : "N/A"}
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-500">Status:</span>
-                <p
-                  className={`font-medium ${
-                    timeEntry.status === "completed"
-                      ? "text-green-600"
-                      : timeEntry.status === "active"
-                      ? "text-blue-600"
-                      : "text-yellow-600"
-                  }`}
-                >
-                  {timeEntry.status === "completed"
-                    ? "Completed"
-                    : timeEntry.status === "active"
-                    ? "Active"
-                    : "Paused"}
                 </p>
               </div>
               {timeEntry.isManual && (

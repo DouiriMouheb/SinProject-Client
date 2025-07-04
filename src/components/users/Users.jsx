@@ -42,9 +42,6 @@ export const Users = () => {
   });
 
   const [filters, setFilters] = useState({
-    department: "",
-    role: "",
-    isActive: "",
     page: 1,
     limit: 20,
     sortBy: "createdAt",
@@ -321,42 +318,48 @@ export const Users = () => {
   // Show list view
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            {hasRole("admin")
-              ? "Manage all users across the organization"
-              : `Manage users in the ${user.department} department`}
-          </p>
-        </div>
+      <div className="mb-8">
+        {/* Header - responsive layout */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              User Management
+            </h1>
+            <p className="mt-2 text-sm text-gray-600">
+              {hasRole("admin")
+                ? "Manage all users across the organization"
+                : `Manage users in the ${user.department} department`}
+            </p>
+          </div>
 
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            variant="secondary"
-            size="sm"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
-          <Button
-            onClick={loadUsers}
-            variant="secondary"
-            size="sm"
-            disabled={loading}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-          {canCreateUser && (
-            <Button onClick={() => openModal("create")}>
-              <Plus className="h-5 w-5 mr-2" />
-              Add User
+          {/* Buttons - stay horizontal but move below title on mobile */}
+          <div className="flex space-x-2 sm:mt-0">
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              variant="secondary"
+              size="sm"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
             </Button>
-          )}
+            <Button
+              onClick={loadUsers}
+              variant="secondary"
+              size="sm"
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+            {canCreateUser && (
+              <Button onClick={() => openModal("create")} size="sm">
+                <Plus className="h-5 w-5 mr-2" />
+                Add User
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

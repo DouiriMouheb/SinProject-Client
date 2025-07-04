@@ -140,16 +140,16 @@ export const UserTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Department
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Login
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -172,7 +172,7 @@ export const UserTable = ({
                     } ${isCurrentUser ? "bg-yellow-50" : ""}`}
                     onClick={() => toggleExpanded(userId)}
                   >
-                    {/* User Info with ProfilePicture */}
+                    {/* User Info with ProfilePicture - Enhanced for mobile */}
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
@@ -201,12 +201,46 @@ export const UserTable = ({
                               {user.email}
                             </p>
                           </div>
+                          {/* Show role and status on mobile only */}
+                          <div className="md:hidden mt-2 space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(
+                                  user.role
+                                )}`}
+                              >
+                                <Shield className="h-3 w-3 mr-1" />
+                                {user.role}
+                              </span>
+                              {user.isActive ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <UserCheck className="h-3 w-3 mr-1" />
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <UserX className="h-3 w-3 mr-1" />
+                                  Inactive
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getDepartmentColor(
+                                  user.department
+                                )}`}
+                              >
+                                <Building2 className="h-3 w-3 mr-1" />
+                                {user.department}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Role */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Role - Hidden on mobile */}
+                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(
                           user.role
@@ -217,8 +251,8 @@ export const UserTable = ({
                       </span>
                     </td>
 
-                    {/* Department */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Department - Hidden on mobile */}
+                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDepartmentColor(
                           user.department
@@ -229,8 +263,8 @@ export const UserTable = ({
                       </span>
                     </td>
 
-                    {/* Status */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Status - Hidden on mobile */}
+                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {user.isActive ? (
                           <>
@@ -250,8 +284,8 @@ export const UserTable = ({
                       </div>
                     </td>
 
-                    {/* Last Login */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* Last Login - Hidden on mobile */}
+                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="h-3 w-3 mr-1" />
                         {formatDate(user.lastLogin)}
@@ -293,7 +327,7 @@ export const UserTable = ({
                   {/* Expanded Row */}
                   {isExpanded && (
                     <tr className="bg-blue-50">
-                      <td colSpan="6" className="px-6 py-4">
+                      <td colSpan="6" className="hidden lg:table-cell px-6 py-4">
                         <div className="max-w-4xl">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
@@ -367,6 +401,48 @@ export const UserTable = ({
 
                           {isCurrentUser && (
                             <div className="mt-3 p-3 bg-blue-100 rounded-md">
+                              <p className="text-sm text-blue-800">
+                                💡 This is your account. Some management actions
+                                are not available for your own account for
+                                security reasons.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      {/* Mobile expanded view */}
+                      <td colSpan="2" className="lg:hidden px-6 py-4">
+                        <div className="space-y-3">
+                          {/* Last Login */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">Last Login</h4>
+                            <div className="flex items-center text-sm text-gray-700">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {formatDate(user.lastLogin)}
+                            </div>
+                          </div>
+
+                          {/* Account Info */}
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">Account Info</h4>
+                            <div className="space-y-1 text-sm text-gray-700">
+                              <p>Created: {formatDate(user.createdAt)}</p>
+                              <p>Updated: {formatDate(user.updatedAt)}</p>
+                              <p>Failed logins: {user.loginAttempts || 0}</p>
+                            </div>
+                          </div>
+
+                          {user.lockUntil && new Date(user.lockUntil) > new Date() && (
+                            <div>
+                              <h4 className="text-sm font-medium text-red-900 mb-1">Account Locked</h4>
+                              <p className="text-sm text-red-700">
+                                Until: {new Date(user.lockUntil).toLocaleString()}
+                              </p>
+                            </div>
+                          )}
+
+                          {isCurrentUser && (
+                            <div className="p-3 bg-blue-100 rounded-md">
                               <p className="text-sm text-blue-800">
                                 💡 This is your account. Some management actions
                                 are not available for your own account for

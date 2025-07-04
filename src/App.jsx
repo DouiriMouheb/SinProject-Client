@@ -10,19 +10,66 @@ import { Users } from "./components/users/Users";
 import { Settings } from "./components/settings/Settings";
 import { toastConfig } from "./utils/toast";
 
+// Placeholder components for new admin routes
+const Customers = () => (
+  <div>
+    <h1 className="text-3xl font-bold text-gray-900 mb-8">
+      Customer Management
+    </h1>
+    <div className="bg-white shadow rounded-lg p-6">
+      <p className="text-gray-600">
+        Customer management functionality will be implemented here.
+      </p>
+      <p className="text-sm text-gray-500 mt-2">
+        This section is only accessible by administrators.
+      </p>
+    </div>
+  </div>
+);
+
+const Process = () => (
+  <div>
+    <h1 className="text-3xl font-bold text-gray-900 mb-8">
+      Process Management
+    </h1>
+    <div className="bg-white shadow rounded-lg p-6">
+      <p className="text-gray-600">
+        Process and activity management functionality will be implemented here.
+      </p>
+      <p className="text-sm text-gray-500 mt-2">
+        This section is only accessible by administrators.
+      </p>
+    </div>
+  </div>
+);
+
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState("timesheets"); // Default to Timesheet page
   const { user, isInitialized } = useAuth();
 
   const renderPage = () => {
     switch (currentPage) {
-      case "timesheets": // ADD: Timesheet page
+      case "timesheets":
         return <TimeSheetList />;
 
       case "users":
         return (
           <ProtectedRoute requiredRole="manager">
             <Users />
+          </ProtectedRoute>
+        );
+
+      case "customers":
+        return (
+          <ProtectedRoute requiredRole="admin">
+            <Customers />
+          </ProtectedRoute>
+        );
+
+      case "process":
+        return (
+          <ProtectedRoute requiredRole="admin">
+            <Process />
           </ProtectedRoute>
         );
 

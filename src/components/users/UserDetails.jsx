@@ -6,12 +6,10 @@ import {
   User,
   Mail,
   Shield,
-  Building2,
   Calendar,
   Clock,
   UserCheck,
   UserX,
-  Key,
   AlertCircle,
   CheckCircle,
   Activity,
@@ -32,20 +30,6 @@ const getRoleColor = (role) => {
     user: "bg-green-100 text-green-800 border-green-200",
   };
   return colors[role] || "bg-gray-100 text-gray-800 border-gray-200";
-};
-
-const getDepartmentColor = (department) => {
-  const colors = {
-    IT: "bg-purple-100 text-purple-800",
-    HR: "bg-pink-100 text-pink-800",
-    Finance: "bg-yellow-100 text-yellow-800",
-    Operations: "bg-blue-100 text-blue-800",
-    Marketing: "bg-green-100 text-green-800",
-    Sales: "bg-orange-100 text-orange-800",
-    Legal: "bg-indigo-100 text-indigo-800",
-    Executive: "bg-gray-100 text-gray-800",
-  };
-  return colors[department] || "bg-gray-100 text-gray-800";
 };
 
 const formatDateTime = (dateString) => {
@@ -107,11 +91,7 @@ export const UserDetails = ({
   const [actionLoading, setActionLoading] = useState(null);
 
   // FIXED: Added state for confirmation modals instead of window.confirm()
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
-  const [showRoleChangeModal, setShowRoleChangeModal] = useState(false);
-  const [pendingRoleChange, setPendingRoleChange] = useState(null);
 
   const { user: currentUser, hasRole } = useAuth();
 
@@ -167,75 +147,6 @@ export const UserDetails = ({
     }
   };
 
-  // FIXED: Updated to use modal instead of window.confirm()
-  const handlePasswordResetRequest = () => {
-    setShowPasswordResetModal(true);
-  };
-
-  const confirmPasswordReset = async () => {
-    if (!user || actionLoading) return;
-
-    setActionLoading("password");
-
-    try {
-      await onResetPassword(userId);
-    } catch (err) {
-      console.error("Error resetting password:", err);
-    } finally {
-      setActionLoading(null);
-      setShowPasswordResetModal(false);
-    }
-  };
-
-  // FIXED: Updated to use modal instead of window.confirm()
-  const handleRoleChangeRequest = (newRole) => {
-    setPendingRoleChange(newRole);
-    setShowRoleChangeModal(true);
-  };
-
-  const confirmRoleChange = async () => {
-    if (!user || !pendingRoleChange || actionLoading) return;
-
-    setActionLoading("role");
-
-    try {
-      await onChangeRole(userId, pendingRoleChange);
-
-      // Update local state
-      setUser((prev) => ({ ...prev, role: pendingRoleChange }));
-
-      showToast.success(`User role changed to ${pendingRoleChange}`);
-    } catch (err) {
-      console.error("Error changing role:", err);
-    } finally {
-      setActionLoading(null);
-      setShowRoleChangeModal(false);
-      setPendingRoleChange(null);
-    }
-  };
-
-  // FIXED: Updated to trigger modal instead of direct action
-  const handleDeleteRequest = () => {
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!user || actionLoading) return;
-
-    setActionLoading("delete");
-
-    try {
-      await onDelete(userId);
-      showToast.success("User deleted successfully");
-      onBack(); // Go back to list after deletion
-    } catch (err) {
-      console.error("Error deleting user:", err);
-
-      setActionLoading(null);
-      setShowDeleteModal(false);
-    }
-  };
-
   // Access control checks
   const isCurrentUser = userId === currentUser.id || userId === currentUser._id;
   const canEdit = () => {
@@ -245,9 +156,6 @@ export const UserDetails = ({
     );
   };
   const canToggleStatus = () => !isCurrentUser && canEdit();
-  const canResetPassword = () => !isCurrentUser && hasRole("admin");
-  const canChangeRole = () => !isCurrentUser && hasRole("admin");
-  const canDelete = () => !isCurrentUser && hasRole("admin");
 
   if (loading) {
     return (
@@ -288,47 +196,53 @@ export const UserDetails = ({
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button onClick={onBack} variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Users
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  {/* FIXED: Use ProfilePicture instead of simple div */}
-                  <ProfilePicture
-                    user={user}
-                    size="lg"
-                    className="mr-3 flex-shrink-0"
-                  />
-                  {user.name}
-                  {isCurrentUser && (
-                    <span className="ml-3 text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                      You
-                    </span>
-                  )}
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+          <div className="flex flex-col space-y-4">
+            {/* Back button and user info */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button onClick={onBack} variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2 sm:mr-2" />
+                  <span className="hidden sm:inline">Back to Users</span>
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                    {/* FIXED: Use ProfilePicture instead of simple div */}
+                    <ProfilePicture
+                      user={user}
+                      size="lg"
+                      className="mr-3 flex-shrink-0"
+                    />
+                    {user.name}
+                    {isCurrentUser && (
+                      <span className="ml-3 text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                        You
+                      </span>
+                    )}
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+                </div>
               </div>
             </div>
 
+            {/* Edit button - moved below name and responsive */}
             {canEdit() && (
-              <Button
-                onClick={() => onEdit(user)}
-                variant="secondary"
-                size="sm"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit User
-              </Button>
+              <div className="flex justify-start">
+                <Button
+                  onClick={() => onEdit(user)}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit User
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Basic Information */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
@@ -364,22 +278,6 @@ export const UserDetails = ({
                     >
                       <Shield className="h-3 w-3 mr-1" />
                       {user.role}
-                    </span>
-                  </dd>
-                </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Department
-                  </dt>
-                  <dd className="mt-1">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDepartmentColor(
-                        user.department
-                      )}`}
-                    >
-                      <Building2 className="h-3 w-3 mr-1" />
-                      {user.department}
                     </span>
                   </dd>
                 </div>
@@ -525,171 +423,10 @@ export const UserDetails = ({
               </div>
             </div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-
-              <div className="space-y-3">
-                {canResetPassword() && (
-                  <Button
-                    onClick={handlePasswordResetRequest}
-                    variant="secondary"
-                    className="w-full justify-start"
-                    disabled={actionLoading === "password"}
-                  >
-                    {actionLoading === "password" ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
-                    ) : (
-                      <Key className="h-4 w-4 mr-2" />
-                    )}
-                    Reset Password
-                  </Button>
-                )}
-
-                {canChangeRole() && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Change Role
-                    </label>
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChangeRequest(e.target.value)}
-                      disabled={actionLoading === "role"}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    >
-                      <option value="user">User</option>
-                      <option value="manager">Manager</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                )}
-
-                {canDelete() && (
-                  <Button
-                    onClick={handleDeleteRequest}
-                    variant="danger"
-                    className="w-full justify-start"
-                    disabled={actionLoading === "delete"}
-                  >
-                    {actionLoading === "delete" ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                    )}
-                    Delete User
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Role Permissions */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Role Permissions
-              </h3>
-
-              <div className="text-sm text-gray-600 space-y-2">
-                {user.role === "admin" && (
-                  <div className="p-3 bg-red-50 rounded">
-                    <strong className="text-red-800">Administrator</strong>
-                    <ul className="mt-1 space-y-1 text-red-700">
-                      <li>• Full system access</li>
-                      <li>• Manage all users</li>
-                      <li>• System configuration</li>
-                    </ul>
-                  </div>
-                )}
-
-                {user.role === "manager" && (
-                  <div className="p-3 bg-blue-50 rounded">
-                    <strong className="text-blue-800">Manager</strong>
-                    <ul className="mt-1 space-y-1 text-blue-700">
-                      <li>• Manage department users</li>
-                      <li>• Assign and review tickets</li>
-                      <li>• Department reporting</li>
-                    </ul>
-                  </div>
-                )}
-
-                {user.role === "user" && (
-                  <div className="p-3 bg-green-50 rounded">
-                    <strong className="text-green-800">User</strong>
-                    <ul className="mt-1 space-y-1 text-green-700">
-                      <li>• Create and manage tickets</li>
-
-                      <li>• View own profile</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Security Information */}
-            {(hasRole("admin") || isCurrentUser) && (
-              <div className="bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Security Info
-                </h3>
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      Failed Login Attempts:
-                    </span>
-                    <span className="font-medium">
-                      {user.loginAttempts || 0}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Account Locked:</span>
-                    <span
-                      className={`font-medium ${
-                        isAccountLocked ? "text-red-600" : "text-green-600"
-                      }`}
-                    >
-                      {isAccountLocked ? "Yes" : "No"}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Last Password Change:</span>
-                    <span className="font-medium">
-                      {formatRelativeTime(user.passwordChangedAt)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* FIXED: Added confirmation modals instead of window.confirm() */}
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete ${user.name}'s account? This action cannot be undone and will permanently remove all user data.`}
-        confirmText="Delete User"
-        cancelText="Cancel"
-        type="delete"
-        isLoading={actionLoading === "delete"}
-        itemName={`${user.name} (${user.email})`}
-        details={[
-          "All user data will be permanently deleted",
-          "Any tickets assigned to this user will need to be reassigned",
-          "This action cannot be reversed",
-        ]}
-      />
 
       {/* Status Toggle Confirmation Modal */}
       <ConfirmationModal
@@ -718,47 +455,6 @@ export const UserDetails = ({
                 "User will need to log in with their existing credentials",
               ]
         }
-      />
-
-      {/* Password Reset Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showPasswordResetModal}
-        onClose={() => setShowPasswordResetModal(false)}
-        onConfirm={confirmPasswordReset}
-        title="Reset Password"
-        message={`Are you sure you want to reset ${user.name}'s password? They will need to log in with the new temporary password.`}
-        confirmText="Reset Password"
-        cancelText="Cancel"
-        type="warning"
-        isLoading={actionLoading === "password"}
-        itemName={`${user.name} (${user.email})`}
-        details={[
-          "A new temporary password will be generated",
-          "User will be logged out of all active sessions",
-          "User will be required to change password on next login",
-        ]}
-      />
-
-      {/* Role Change Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showRoleChangeModal}
-        onClose={() => {
-          setShowRoleChangeModal(false);
-          setPendingRoleChange(null);
-        }}
-        onConfirm={confirmRoleChange}
-        title="Change User Role"
-        message={`Are you sure you want to change ${user.name}'s role from ${user.role} to ${pendingRoleChange}? This will change their access permissions.`}
-        confirmText="Change Role"
-        cancelText="Cancel"
-        type="warning"
-        isLoading={actionLoading === "role"}
-        itemName={`${user.name} (${user.email})`}
-        details={[
-          `Role will change from ${user.role} to ${pendingRoleChange}`,
-          "User permissions will be updated immediately",
-          "User will need to log in again to see new permissions",
-        ]}
       />
     </>
   );

@@ -16,24 +16,6 @@ import {
 import { Button } from "../common/Button";
 import { ProfilePicture } from "../common/ProfilePicture";
 
-const getStatusColor = (status) => {
-  const colors = {
-    active: "bg-green-100 text-green-800 border-green-200",
-    paused: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    completed: "bg-blue-100 text-blue-800 border-blue-200",
-  };
-  return colors[status] || "bg-gray-100 text-gray-800 border-gray-200";
-};
-
-const getStatusIcon = (status) => {
-  const icons = {
-    active: Play,
-    paused: Pause,
-    completed: Square,
-  };
-  return icons[status] || Square;
-};
-
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
 
@@ -75,18 +57,12 @@ const formatTime = (dateString) => {
   }
 };
 
-const formatDuration = (minutes) => {
-  if (!minutes || minutes === 0) return "0m";
-
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-
-  if (hours === 0) {
-    return `${mins}m`;
-  } else if (mins === 0) {
-    return `${hours}h`;
-  } else {
-    return `${hours}h ${mins}m`;
+const formatDateTime = (dateString) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  } catch (error) {
+    return "N/A";
   }
 };
 
@@ -145,12 +121,7 @@ export const TimeSheetTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date & Time
               </th>
-              <th className="px-3 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20 md:w-auto">
-                Duration
-              </th>
-              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
+
               {showUser && (
                 <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User
@@ -165,7 +136,6 @@ export const TimeSheetTable = ({
             {timeEntries.map((entry) => {
               const entryId = entry.id || entry._id;
               const isExpanded = expandedEntry === entryId;
-              const StatusIcon = getStatusIcon(entry.status);
 
               return (
                 <React.Fragment key={entryId}>
@@ -237,31 +207,6 @@ export const TimeSheetTable = ({
                       </div>
                     </td>
 
-                    {/* Duration */}
-                    <td className="px-3 md:px-6 py-4 whitespace-nowrap w-20 md:w-auto text-center">
-                      <div className="text-sm text-gray-900 font-mono">
-                        {formatDuration(entry.durationMinutes)}
-                      </div>
-                    </td>
-
-                    {/* Status - Hidden on mobile */}
-                    <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <StatusIcon className="h-4 w-4 mr-2" />
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
-                            entry.status
-                          )}`}
-                        >
-                          {entry.status === "completed"
-                            ? "Completed"
-                            : entry.status === "active"
-                            ? "Active"
-                            : "Paused"}
-                        </span>
-                      </div>
-                    </td>
-
                     {/* User (for admin/manager views) - Hidden on mobile */}
                     {showUser && (
                       <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
@@ -292,19 +237,6 @@ export const TimeSheetTable = ({
                           <Eye className="h-4 w-4" />
                         </button>
 
-                        {canEdit(entry) && entry.status === "completed" && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(entry);
-                            }}
-                            className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                            title="Edit entry"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        )}
-
                         {canDelete(entry) && (
                           <button
                             onClick={(e) => {
@@ -324,7 +256,10 @@ export const TimeSheetTable = ({
                   {/* Expanded Row */}
                   {isExpanded && (
                     <tr className="bg-blue-50">
-                      <td colSpan={showUser ? 6 : 5} className="hidden md:table-cell px-6 py-4">
+                      <td
+                        colSpan={showUser ? 6 : 5}
+                        className="hidden md:table-cell px-6 py-4"
+                      >
                         <div className="max-w-4xl">
                           {/* Description */}
                           {entry.description && (
@@ -392,22 +327,6 @@ export const TimeSheetTable = ({
                           </div>
 
                           {/* Entry Type Info */}
-                          {entry.status !== "completed" && (
-                            <div className="mt-3 p-3 bg-yellow-50 rounded-md">
-                              <div className="flex items-center">
-                                <AlertCircle className="h-4 w-4 text-yellow-500 mr-2" />
-                                <div className="text-sm text-yellow-700">
-                                  <p className="font-medium">Active Entry</p>
-                                  <p>
-                                    This entry is currently {entry.status}.
-                                    {entry.status === "active"
-                                      ? " Time is being tracked."
-                                      : " Timer is paused."}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </td>
                       {/* Mobile expanded view */}
@@ -415,11 +334,15 @@ export const TimeSheetTable = ({
                         <div className="space-y-3">
                           {/* Task and Project Info */}
                           <div>
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Project & Activity</h4>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">
+                              Project & Activity
+                            </h4>
                             <div className="text-sm text-gray-700">
                               <div className="flex items-center">
                                 <Briefcase className="h-3 w-3 mr-1" />
-                                <span>{entry.workProject?.name || "Unknown Project"}</span>
+                                <span>
+                                  {entry.workProject?.name || "Unknown Project"}
+                                </span>
                               </div>
                               <div className="ml-4 text-xs text-gray-500">
                                 {entry.activity?.name || "Unknown Activity"}
@@ -435,18 +358,30 @@ export const TimeSheetTable = ({
                           {/* Description */}
                           {entry.description && (
                             <div>
-                              <h4 className="text-sm font-medium text-gray-900 mb-1">Description</h4>
-                              <p className="text-sm text-gray-700">{entry.description}</p>
+                              <h4 className="text-sm font-medium text-gray-900 mb-1">
+                                Description
+                              </h4>
+                              <p className="text-sm text-gray-700">
+                                {entry.description}
+                              </p>
                             </div>
                           )}
 
                           {/* User info if shown */}
                           {showUser && entry.user && (
                             <div>
-                              <h4 className="text-sm font-medium text-gray-900 mb-1">User</h4>
+                              <h4 className="text-sm font-medium text-gray-900 mb-1">
+                                User
+                              </h4>
                               <div className="flex items-center">
-                                <ProfilePicture user={entry.user} size="sm" className="mr-2" />
-                                <span className="text-sm text-gray-700">{entry.user.name}</span>
+                                <ProfilePicture
+                                  user={entry.user}
+                                  size="sm"
+                                  className="mr-2"
+                                />
+                                <span className="text-sm text-gray-700">
+                                  {entry.user.name}
+                                </span>
                               </div>
                             </div>
                           )}

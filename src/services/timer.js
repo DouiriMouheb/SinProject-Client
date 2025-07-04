@@ -165,10 +165,6 @@ export const timerService = {
         updateData.endTime = entryData.endTime;
       }
 
-      if (entryData.durationMinutes !== undefined) {
-        updateData.durationMinutes = entryData.durationMinutes;
-      }
-
       const response = await apiClient.put(`/timer/entries/${id}`, updateData);
 
       if (response.success) {
@@ -206,19 +202,10 @@ export const timerService = {
         backendData.endTime = new Date(
           `${entryData.date}T${entryData.endTime}`
         ).toISOString();
-
-        // Calculate duration in minutes
-        const start = new Date(backendData.startTime);
-        const end = new Date(backendData.endTime);
-        backendData.durationMinutes = Math.floor((end - start) / (1000 * 60));
       } else if (entryData.startTime && entryData.endTime) {
         // Frontend already sends full datetime strings
         backendData.startTime = entryData.startTime;
         backendData.endTime = entryData.endTime;
-
-        if (entryData.durationMinutes) {
-          backendData.durationMinutes = entryData.durationMinutes;
-        }
       } else {
         throw new Error(
           "Start time and end time are required for manual entries"

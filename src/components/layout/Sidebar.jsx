@@ -7,6 +7,8 @@ import {
   LogOut,
   ChevronLeft,
   Hourglass,
+  Building2, // For Customers
+  Workflow, // For Process
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { ProfilePicture } from "../common/ProfilePicture";
@@ -22,15 +24,20 @@ export const Sidebar = ({
   const { user, logout, hasRole } = useAuth();
 
   const navigation = [
-    /*{ name: "Dashboard", icon: Home, page: "dashboard" },
-    { name: "Tickets", icon: Ticket, page: "tickets" },*/
     { name: "TimeSheets", icon: Hourglass, page: "timesheets" },
 
+    // Manager-level access
     ...(hasRole("manager")
       ? [{ name: "Users", icon: Users, page: "users" }]
       : []),
+
+    // Admin-only access
     ...(hasRole("admin")
-      ? [{ name: "Settings", icon: Settings, page: "settings" }]
+      ? [
+          { name: "Customers", icon: Building2, page: "customers" },
+          { name: "Process", icon: Workflow, page: "process" },
+          { name: "Settings", icon: Settings, page: "settings" },
+        ]
       : []),
   ];
 
@@ -104,7 +111,7 @@ export const Sidebar = ({
         ))}
       </nav>
 
-      {/* Updated Profile Section with ProfilePicture component */}
+      {/* Profile Section */}
       <div className={`border-t ${isOpen ? "p-4" : "p-2"}`}>
         <div
           className={`flex items-center ${
@@ -113,7 +120,6 @@ export const Sidebar = ({
           onClick={handleProfileClick}
           title={!isOpen ? "My Profile" : ""}
         >
-          {/* Use ProfilePicture component instead of simple div */}
           <ProfilePicture user={user} size="sm" className="flex-shrink-0" />
 
           {isOpen && (
@@ -125,7 +131,6 @@ export const Sidebar = ({
             </div>
           )}
 
-          {/* Tooltip for collapsed state */}
           {!isOpen && !isMobile && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
               My Profile
@@ -143,7 +148,6 @@ export const Sidebar = ({
           <LogOut className={`${isOpen ? "mr-3" : ""} h-4 w-4 flex-shrink-0`} />
           {isOpen && <span>Sign out</span>}
 
-          {/* Tooltip for collapsed state */}
           {!isOpen && !isMobile && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
               Sign out

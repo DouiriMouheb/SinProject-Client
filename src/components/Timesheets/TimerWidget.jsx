@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Play, Pause, Square, Clock, AlertCircle } from "lucide-react";
+import { Square, Clock, AlertCircle } from "lucide-react";
 import { Button } from "../common/Button";
 import { timerService } from "../../services/timer";
 import { showToast } from "../../utils/toast";
@@ -14,8 +14,12 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
   // Update local state when activeTimer prop changes
   useEffect(() => {
     if (activeTimer) {
-      setIsRunning(activeTimer.status === "active");
-      calculateCurrentTime();
+      // Timer is running if endTime is null
+      const isActive = !activeTimer.endTime;
+      setIsRunning(isActive);
+      if (isActive) {
+        calculateCurrentTime();
+      }
     } else {
       setIsRunning(false);
       setCurrentTime(0);
@@ -61,40 +65,6 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
     return `${minutes.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
-  };
-
-  const handlePause = async () => {
-    if (loading) return;
-
-    setLoading(true);
-    try {
-      await timerService.pauseTimer();
-      setIsRunning(false);
-      showToast.success("Timer paused");
-      onTimerUpdate?.();
-    } catch (error) {
-      console.error("Error pausing timer:", error);
-      showToast.error("Failed to pause timer");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResume = async () => {
-    if (loading) return;
-
-    setLoading(true);
-    try {
-      await timerService.resumeTimer();
-      setIsRunning(true);
-      showToast.success("Timer resumed");
-      onTimerUpdate?.();
-    } catch (error) {
-      console.error("Error resuming timer:", error);
-      showToast.error("Failed to resume timer");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleStop = async () => {
@@ -149,11 +119,7 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
             <div className="flex items-center">
               <div
                 className={`w-3 h-3 rounded-full mr-3 ${
-                  isRunning
-                    ? "bg-green-500 animate-pulse"
-                    : activeTimer.status === "paused"
-                    ? "bg-yellow-500"
-                    : "bg-gray-400"
+                  isRunning ? "bg-green-500 animate-pulse" : "bg-gray-400"
                 }`}
               />
               <div>
@@ -161,11 +127,7 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
                   {formatTime(currentTime)}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {activeTimer.status === "active"
-                    ? "Running"
-                    : activeTimer.status === "paused"
-                    ? "Paused"
-                    : "Stopped"}
+                  {!activeTimer.endTime ? "Running" : "Completed"}
                 </div>
               </div>
             </div>
@@ -191,38 +153,6 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
 
           {/* Timer Controls */}
           <div className="flex items-center space-x-3">
-            {isRunning ? (
-              <Button
-                onClick={handlePause}
-                disabled={loading}
-                variant="secondary"
-                size="sm"
-                className="flex items-center"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2" />
-                ) : (
-                  <Pause className="h-4 w-4 mr-2" />
-                )}
-                Pause
-              </Button>
-            ) : activeTimer.status === "paused" ? (
-              <Button
-                onClick={handleResume}
-                disabled={loading}
-                variant="primary"
-                size="sm"
-                className="flex items-center"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
-                )}
-                Resume
-              </Button>
-            ) : null}
-
             <Button
               onClick={handleStopClick}
               disabled={loading}
