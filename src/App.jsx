@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -31,6 +31,13 @@ const Process = () => (
 const AppContent = () => {
   const [currentPage, setCurrentPage] = useState("timesheets"); // Default to Timesheet page
   const { user, isInitialized } = useAuth();
+
+  // Reset to default page when user logs out
+  useEffect(() => {
+    if (!user && isInitialized) {
+      setCurrentPage("timesheets");
+    }
+  }, [user, isInitialized]);
 
   const renderPage = () => {
     switch (currentPage) {
