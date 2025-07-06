@@ -9,6 +9,7 @@ export { authService } from "./auth";
 export { ticketService } from "./tickets";
 export { customerService } from "./customers";
 export { userService } from "./users";
+export { dailyLoginService } from "./dailyLogin";
 
 // Combined services object for convenience
 export const services = {
@@ -16,6 +17,7 @@ export const services = {
   tickets: ticketService,
   customers: customerService,
   users: userService,
+  dailyLogin: dailyLoginService,
 };
 
 // Helper function to handle common API errors

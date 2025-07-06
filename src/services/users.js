@@ -264,7 +264,7 @@ export const userService = {
   // Update user by ID (role-based permissions)
   async updateUser(id, userData) {
     try {
-      const response = await apiClient.put(`/users/${id}`, userData);
+      const response = await apiClient.put(`/admin/users/${id}`, userData);
 
       if (response.success) {
         return response;
@@ -284,7 +284,7 @@ export const userService = {
   // Activate/deactivate user
   async toggleUserStatus(id, isActive) {
     try {
-      const response = await apiClient.put(`/users/${id}`, { isActive });
+      const response = await apiClient.put(`/admin/users/${id}`, { isActive });
 
       if (response.success) {
         return response;
@@ -311,7 +311,7 @@ export const userService = {
       }
 
       const response = await apiClient.put(
-        `/users/${id}/reset-password`,
+        `/admin/users/${id}/reset-password`,
         payload
       );
 
@@ -333,7 +333,7 @@ export const userService = {
   // Change user role (admin only)
   async changeUserRole(id, role) {
     try {
-      const response = await apiClient.put(`/users/${id}`, { role });
+      const response = await apiClient.put(`/admin/users/${id}`, { role });
 
       if (response.success) {
         return response;
@@ -353,7 +353,7 @@ export const userService = {
   // Delete user (admin only)
   async deleteUser(id) {
     try {
-      const response = await apiClient.delete(`/users/${id}`);
+      const response = await apiClient.delete(`/admin/users/${id}`);
 
       if (response.success) {
         return response;
@@ -373,7 +373,7 @@ export const userService = {
   // Get user statistics (admin only)
   async getUserStats() {
     try {
-      const response = await apiClient.get("/users/stats");
+      const response = await apiClient.get("/admin/users/stats");
 
       if (response.success) {
         return response;
@@ -401,7 +401,7 @@ export const userService = {
         }
       });
 
-      const endpoint = `/users/export${
+      const endpoint = `/admin/users/export${
         queryParams.toString() ? `?${queryParams.toString()}` : ""
       }`;
 

@@ -38,7 +38,7 @@ export const Input = ({
     return {
       border: "border-gray-300 focus:border-blue-500",
       ring: "focus:ring-blue-500",
-      bg: "bg-white",
+      bg: "bg-white dark:bg-gray-700",
     };
   };
 
@@ -56,7 +56,7 @@ export const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}

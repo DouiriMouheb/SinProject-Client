@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import {
   Eye,
-  Edit,
   Trash2,
   UserCheck,
   UserX,
@@ -69,7 +68,6 @@ const formatDate = (dateString) => {
 export const UserTable = ({
   users = [],
   onView,
-  onEdit,
   onChangeRole,
   canEdit = () => false,
   canDelete = false,
@@ -88,10 +86,6 @@ export const UserTable = ({
       targetUser.id === currentUser.id ||
       targetUser._id === currentUser.id
     );
-  };
-
-  const canEditUser = (targetUser) => {
-    return canEdit(targetUser);
   };
 
   const toggleExpanded = (userId) => {
@@ -307,19 +301,6 @@ export const UserTable = ({
                             <Eye className="h-4 w-4" />
                           </button>
                         )}
-
-                        {canEditUser(user) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEdit(user);
-                            }}
-                            className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded"
-                            title="Edit user"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -327,7 +308,10 @@ export const UserTable = ({
                   {/* Expanded Row */}
                   {isExpanded && (
                     <tr className="bg-blue-50">
-                      <td colSpan="6" className="hidden lg:table-cell px-6 py-4">
+                      <td
+                        colSpan="6"
+                        className="hidden lg:table-cell px-6 py-4"
+                      >
                         <div className="max-w-4xl">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
@@ -415,7 +399,9 @@ export const UserTable = ({
                         <div className="space-y-3">
                           {/* Last Login */}
                           <div>
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Last Login</h4>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">
+                              Last Login
+                            </h4>
                             <div className="flex items-center text-sm text-gray-700">
                               <Calendar className="h-3 w-3 mr-1" />
                               {formatDate(user.lastLogin)}
@@ -424,7 +410,9 @@ export const UserTable = ({
 
                           {/* Account Info */}
                           <div>
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Account Info</h4>
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">
+                              Account Info
+                            </h4>
                             <div className="space-y-1 text-sm text-gray-700">
                               <p>Created: {formatDate(user.createdAt)}</p>
                               <p>Updated: {formatDate(user.updatedAt)}</p>
@@ -432,14 +420,18 @@ export const UserTable = ({
                             </div>
                           </div>
 
-                          {user.lockUntil && new Date(user.lockUntil) > new Date() && (
-                            <div>
-                              <h4 className="text-sm font-medium text-red-900 mb-1">Account Locked</h4>
-                              <p className="text-sm text-red-700">
-                                Until: {new Date(user.lockUntil).toLocaleString()}
-                              </p>
-                            </div>
-                          )}
+                          {user.lockUntil &&
+                            new Date(user.lockUntil) > new Date() && (
+                              <div>
+                                <h4 className="text-sm font-medium text-red-900 mb-1">
+                                  Account Locked
+                                </h4>
+                                <p className="text-sm text-red-700">
+                                  Until:{" "}
+                                  {new Date(user.lockUntil).toLocaleString()}
+                                </p>
+                              </div>
+                            )}
 
                           {isCurrentUser && (
                             <div className="p-3 bg-blue-100 rounded-md">

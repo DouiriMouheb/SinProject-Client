@@ -17,15 +17,20 @@ import {
   AlertTriangle,
   Download,
   FileText,
+  Save,
+  X,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../common/Button";
+import { Input } from "../common/Input";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { userService } from "../../services/users";
 import { timesheetService } from "../../services/timesheet";
 import { generateTimesheetPDF } from "../../utils/pdfGenerator";
 import { showToast } from "../../utils/toast";
 import { ProfilePicture } from "../common/ProfilePicture"; // ADDED: Import ProfilePicture
+import { DailyLoginTracker } from "../common/DailyLoginTracker"; // ADDED: Import DailyLoginTracker
+import { ThemeToggle } from "../common/ThemeToggle"; // ADDED: Import ThemeToggle
 
 const getRoleColor = (role) => {
   const colors = {
@@ -100,6 +105,15 @@ export const UserDetails = ({
   // Timesheet download states
   const [downloadingPDF, setDownloadingPDF] = useState(false);
 
+  // Edit mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    role: "",
+  });
+  const [savingChanges, setSavingChanges] = useState(false);
+
   const { user: currentUser, hasRole } = useAuth();
 
   useEffect(() => {
@@ -117,6 +131,12 @@ export const UserDetails = ({
 
       if (response.success) {
         setUser(response.data.user);
+        // Set form data for editing
+        setEditForm({
+          name: response.data.user.name || "",
+          email: response.data.user.email || "",
+          role: response.data.user.role || "",
+        });
       }
     } catch (err) {
       console.error("Error loading user:", err);
@@ -211,6 +231,63 @@ export const UserDetails = ({
     }
   };
 
+  // Edit functions
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    // Reset form with current user data
+    setEditForm({
+      name: user.name || "",
+      email: user.email || "",
+      role: user.role || "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form to original data
+    setEditForm({
+      name: user.name || "",
+      email: user.email || "",
+      role: user.role || "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm.name.trim() || !editForm.email.trim()) {
+      showToast.error("Name and email are required");
+      return;
+    }
+
+    setSavingChanges(true);
+    try {
+      const response = await userService.updateUser(userId, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        role: editForm.role,
+      });
+
+      if (response.success) {
+        setUser(response.data.user);
+        setIsEditing(false);
+        showToast.success("User updated successfully");
+      } else {
+        showToast.error(response.message || "Failed to update user");
+      }
+    } catch (err) {
+      console.error("Error updating user:", err);
+      showToast.error("Failed to update user");
+    } finally {
+      setSavingChanges(false);
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   // Access control checks
   const isCurrentUser = userId === currentUser.id || userId === currentUser._id;
   const canEdit = () => {
@@ -284,21 +361,69 @@ export const UserDetails = ({
                     )}
                   </h1>
                   <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+
+                  {/* Theme toggle for current user */}
+                  {isCurrentUser && (
+                    <div className="mt-2 flex items-center space-x-3">
+                      <ThemeToggle />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Theme
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Inline daily activity for current user */}
+                  {isCurrentUser && (
+                    <div className="mt-2">
+                      <DailyLoginTracker
+                        variant="inline"
+                        className="text-sm bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md px-3 py-2"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3">
-              {canEdit() && (
-                <Button
-                  onClick={() => onEdit(user)}
-                  variant="secondary"
-                  size="sm"
-                >
+              {canEdit() && !isEditing && (
+                <Button onClick={handleStartEdit} variant="secondary" size="sm">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit User
                 </Button>
+              )}
+
+              {canEdit() && isEditing && (
+                <>
+                  <Button
+                    onClick={handleSaveEdit}
+                    variant="primary"
+                    size="sm"
+                    disabled={savingChanges}
+                  >
+                    {savingChanges ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleCancelEdit}
+                    variant="secondary"
+                    size="sm"
+                    disabled={savingChanges}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
               )}
 
               {/* Download Timesheet button - available for managers/admins */}
@@ -330,55 +455,99 @@ export const UserDetails = ({
           {/* Main Content */}
           <div className="space-y-6">
             {/* Basic Information */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2" />
                 Basic Information
               </h2>
 
               <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Full Name
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user.name}</dd>
-                </div>
-
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Email Address
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 flex items-center">
-                    <Mail className="h-4 w-4 mr-1 text-gray-400" />
-                    {user.email}
+                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                    {isEditing ? (
+                      <Input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) =>
+                          handleFormChange("name", e.target.value)
+                        }
+                        placeholder="Enter full name"
+                        disabled={savingChanges}
+                      />
+                    ) : (
+                      user.name
+                    )}
                   </dd>
                 </div>
 
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Role</dt>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Email Address
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                    {isEditing ? (
+                      <Input
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) =>
+                          handleFormChange("email", e.target.value)
+                        }
+                        placeholder="Enter email address"
+                        disabled={savingChanges}
+                      />
+                    ) : (
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-1 text-gray-400" />
+                        {user.email}
+                      </div>
+                    )}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Role
+                  </dt>
                   <dd className="mt-1">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(
-                        user.role
-                      )}`}
-                    >
-                      <Shield className="h-3 w-3 mr-1" />
-                      {user.role}
-                    </span>
+                    {isEditing ? (
+                      <select
+                        value={editForm.role}
+                        onChange={(e) =>
+                          handleFormChange("role", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={savingChanges}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(
+                          user.role
+                        )}`}
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        {user.role}
+                      </span>
+                    )}
                   </dd>
                 </div>
               </dl>
             </div>
 
             {/* Account Status */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <Activity className="h-5 w-5 mr-2" />
                 Account Status
               </h2>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center justify-between p-4 border dark:border-gray-600 rounded-lg">
                   <div className="flex items-center">
                     {user.isActive ? (
                       <UserCheck className="h-5 w-5 text-green-500 mr-3" />
@@ -386,7 +555,7 @@ export const UserDetails = ({
                       <UserX className="h-5 w-5 text-red-500 mr-3" />
                     )}
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Account Status
                       </p>
                       <p
@@ -434,24 +603,28 @@ export const UserDetails = ({
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 border rounded-lg">
+                  <div className="p-4 border dark:border-gray-600 rounded-lg">
                     <div className="flex items-center">
                       <LogIn className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
-                        <p className="text-xs text-gray-500">Last Login</p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Last Login
+                        </p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {formatRelativeTime(user.lastLogin)}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 border rounded-lg">
+                  <div className="p-4 border dark:border-gray-600 rounded-lg">
                     <div className="flex items-center">
                       <AlertCircle className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
-                        <p className="text-xs text-gray-500">Failed Attempts</p>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Failed Attempts
+                        </p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {user.loginAttempts || 0}
                         </p>
                       </div>
@@ -461,9 +634,26 @@ export const UserDetails = ({
               </div>
             </div>
 
+            {/* Daily Login Tracker - only show for current user or if viewing others as admin/manager */}
+            {(isCurrentUser || canEdit()) && (
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Daily Activity
+                </h2>
+                <div className="space-y-4">
+                  <DailyLoginTracker
+                    variant="card"
+                    className="border-0 bg-transparent p-0"
+                    userId={!isCurrentUser ? userId : null}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Account Timeline */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                 <Clock className="h-5 w-5 mr-2" />
                 Account Timeline
               </h2>
@@ -472,10 +662,10 @@ export const UserDetails = ({
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       Account Created
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatDateTime(user.createdAt)}
                     </p>
                   </div>
@@ -484,10 +674,10 @@ export const UserDetails = ({
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       Last Updated
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatDateTime(user.updatedAt)}
                     </p>
                   </div>
@@ -497,10 +687,10 @@ export const UserDetails = ({
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0 w-2 h-2 bg-purple-400 rounded-full"></div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Last Login
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {formatDateTime(user.lastLogin)}
                       </p>
                     </div>

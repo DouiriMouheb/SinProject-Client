@@ -1,7 +1,6 @@
 // src/components/Timesheets/TimeSheetTable.jsx - Time entries display
 import React, { useState } from "react";
 import {
-  Eye,
   Edit,
   Trash2,
   Clock,
@@ -68,7 +67,6 @@ const formatDateTime = (dateString) => {
 
 export const TimeSheetTable = ({
   timeEntries = [],
-  onView,
   onEdit,
   onDelete,
   canEdit = () => true,
@@ -229,12 +227,12 @@ export const TimeSheetTable = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onView(entry);
+                            onEdit(entry);
                           }}
                           className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
-                          title="View details"
+                          title="Edit details"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </button>
 
                         {canDelete(entry) && (

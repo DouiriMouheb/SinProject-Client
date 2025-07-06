@@ -241,7 +241,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-md w-full mx-4">
         {/* Header */}
         <div className="text-center mb-8">
@@ -251,7 +251,7 @@ export const LoginPage = () => {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white shadow-xl rounded-lg p-8">
+        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-8">
           {/* Status Indicator */}
           {lastErrorType && (
             <div className="flex justify-center">

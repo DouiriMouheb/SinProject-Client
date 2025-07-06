@@ -1,5 +1,6 @@
 @import "tailwindcss";
-/* styles.css */
+
+/* Custom styles */
 @layer utilities {
   .neon-text {
     text-shadow: 0 0 5px #66ccff, 0 0 10px #66ccff, 0 0 20px #66ccff,
@@ -22,10 +23,28 @@
   }
 }
 
+/* Base styles with dark mode support */
 body {
   font-family: "Comfortaa", sans-serif;
-  font-weight: 300; /* Light for body text */
-  background-color: #10172a;
+  font-weight: 300;
+  background-color: #f3f4f6; /* gray-100 */
+  color: #111827; /* gray-900 */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode styles */
+.dark body {
+  background-color: #111827; /* gray-900 */
+  color: #f9fafb; /* gray-50 */
+}
+
+/* Dark mode root styling */
+:root {
+  color-scheme: light dark;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 h1,

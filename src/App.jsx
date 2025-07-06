@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./hooks/useAuth";
 import { Layout } from "./components/layout/Layout";
 import { LoginPage } from "./components/auth/LoginPage";
@@ -80,10 +81,12 @@ const AppContent = () => {
   // Show minimal loading only during initialization
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600 text-sm">Initializing...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-300 text-sm">
+            Initializing...
+          </p>
         </div>
       </div>
     );
@@ -107,9 +110,11 @@ const AppContent = () => {
 const App = () => {
   return (
     <>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
 
       {/* Toast container - positioned globally */}
       <Toaster

@@ -603,7 +603,6 @@ export const TimeSheetList = () => {
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <TimeSheetTable
             timeEntries={timeEntries}
-            onView={(entry) => openTimeEntryModal("view", entry)}
             onEdit={(entry) => openTimeEntryModal("edit", entry)}
             onDelete={handleDeleteRequest}
             canEdit={() => true}

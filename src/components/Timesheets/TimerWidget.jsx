@@ -188,8 +188,8 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
 
       {/* Stop Confirmation Modal */}
       {showStopConfirm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Stop Timer
