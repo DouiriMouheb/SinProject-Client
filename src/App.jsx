@@ -15,7 +15,7 @@ import { toastConfig } from "./utils/toast";
 // Placeholder components for new admin routes
 const Process = () => (
   <div>
-    <h1 className="text-3xl font-bold text-gray-900 mb-8">
+    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
       Process Management
     </h1>
     <div className="bg-white shadow rounded-lg p-6">

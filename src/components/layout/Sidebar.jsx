@@ -5,7 +5,6 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronLeft,
   Hourglass,
   Building2, // For Customers
   Workflow, // For Process
@@ -14,15 +13,12 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { ProfilePicture } from "../common/ProfilePicture";
 import { DailyLoginTracker } from "../common/DailyLoginTracker";
-import { ThemeToggle } from "../common/ThemeToggle";
 
 export const Sidebar = ({
   currentPage,
   setCurrentPage,
   sidebarOpen,
   toggleSidebar,
-  isMobile,
-  onCloseMobile,
   onOpenProfile,
 }) => {
   const { user, logout, hasRole } = useAuth();
@@ -47,7 +43,6 @@ export const Sidebar = ({
 
   const handleNavClick = (page) => {
     setCurrentPage(page);
-    onCloseMobile();
   };
 
   const handleProfileClick = () => {
@@ -56,42 +51,31 @@ export const Sidebar = ({
     }
   };
 
-  const isOpen = sidebarOpen || isMobile;
+  const isOpen = sidebarOpen;
 
   return (
     <div
-      className={`flex flex-col h-full bg-white dark:bg-gray-800 shadow-lg overflow-x-hidden ${
+      className={`flex flex-col h-full bg-slate-50 dark:bg-slate-800 shadow-xl border-r border-slate-200 dark:border-slate-700 overflow-x-hidden ${
         isOpen ? "w-64" : "w-16"
       } transition-all duration-300`}
     >
       <div
         className={`flex items-center ${
           isOpen ? "justify-between" : "justify-center"
-        } h-16 px-4 bg-blue-600 dark:bg-blue-700`}
+        } h-16 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-700`}
       >
         {isOpen ? (
           <>
             <h1 className="text-xl font-bold text-white">Company Portal</h1>
             <div className="flex items-center space-x-2">
-              {/* Toggle button for desktop */}
-              {!isMobile && (
-                <button
-                  onClick={toggleSidebar}
-                  className="text-white hover:text-gray-200 p-1 rounded transition-colors"
-                  title="Toggle sidebar"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-              )}
-              {/* Close button for mobile */}
-              {isMobile && (
-                <button
-                  onClick={onCloseMobile}
-                  className="text-white hover:text-gray-200"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-              )}
+              {/* Toggle button */}
+              <button
+                onClick={toggleSidebar}
+                className="text-white hover:text-gray-200 p-1 rounded transition-colors"
+                title="Toggle sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </div>
           </>
         ) : (
@@ -112,10 +96,10 @@ export const Sidebar = ({
             onClick={() => handleNavClick(item.page)}
             className={`w-full flex items-center ${
               isOpen ? "px-2" : "px-3 justify-center"
-            } py-2 text-sm font-medium rounded-md transition-colors group relative ${
+            } py-2 text-sm font-medium rounded-md transition-all duration-200 group relative ${
               currentPage === item.page
-                ? "bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                ? "bg-blue-100 dark:bg-slate-700 text-blue-900 dark:text-blue-300 shadow-sm"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
             title={!isOpen ? item.name : ""}
           >
@@ -125,8 +109,8 @@ export const Sidebar = ({
             {isOpen && <span>{item.name}</span>}
 
             {/* Tooltip for collapsed state */}
-            {!isOpen && !isMobile && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+            {!isOpen && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 dark:bg-slate-600 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                 {item.name}
               </div>
             )}
@@ -136,12 +120,14 @@ export const Sidebar = ({
 
       {/* Profile Section */}
       <div
-        className={`border-t dark:border-gray-700 ${isOpen ? "p-4" : "p-2"}`}
+        className={`border-t border-slate-200 dark:border-slate-700 ${
+          isOpen ? "p-4" : "p-2"
+        } bg-slate-50 dark:bg-slate-800`}
       >
         <div
           className={`flex items-center ${
             !isOpen ? "justify-center" : ""
-          } mb-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md p-2 transition-colors group relative`}
+          } mb-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md p-2 transition-colors group relative`}
           onClick={handleProfileClick}
           title={!isOpen ? "My Profile" : ""}
         >
@@ -149,16 +135,16 @@ export const Sidebar = ({
 
           {isOpen && (
             <div className="ml-2 min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
                 {user.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                 {user.role}
               </p>
             </div>
           )}
 
-          {!isOpen && !isMobile && (
+          {!isOpen && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
               My Profile
             </div>
@@ -170,41 +156,23 @@ export const Sidebar = ({
           <div className="mb-3">
             <DailyLoginTracker
               variant="compact"
-              className="text-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md p-2"
+              className="text-xs bg-blue-50 dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-md p-2"
             />
           </div>
         )}
-
-        {/* Theme Toggle */}
-        <div
-          className={`flex items-center ${
-            !isOpen ? "justify-center" : ""
-          } mb-2`}
-        >
-          {isOpen ? (
-            <div className="flex items-center justify-between w-full">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Theme
-              </span>
-              <ThemeToggle />
-            </div>
-          ) : (
-            <ThemeToggle />
-          )}
-        </div>
 
         <button
           onClick={logout}
           className={`w-full flex items-center ${
             isOpen ? "px-2" : "justify-center"
-          } py-2 text-sm font-medium text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 group relative`}
+          } py-2 text-sm font-medium text-slate-600 dark:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 group relative transition-all duration-200`}
           title={!isOpen ? "Sign out" : ""}
         >
           <LogOut className={`${isOpen ? "mr-3" : ""} h-4 w-4 flex-shrink-0`} />
           {isOpen && <span>Sign out</span>}
 
-          {!isOpen && !isMobile && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+          {!isOpen && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
               Sign out
             </div>
           )}

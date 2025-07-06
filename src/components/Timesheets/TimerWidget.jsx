@@ -98,11 +98,13 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
 
   if (!activeTimer) {
     return (
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-center text-gray-500">
+      <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
+        <div className="flex items-center justify-center text-slate-500 dark:text-slate-400">
           <Clock className="h-8 w-8 mr-3" />
           <div className="text-center">
-            <p className="text-lg font-medium">No Active Timer</p>
+            <p className="text-lg font-medium text-slate-700 dark:text-slate-300">
+              No Active Timer
+            </p>
             <p className="text-sm">Start timing your work to track progress</p>
           </div>
         </div>
@@ -112,39 +114,41 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
 
   return (
     <>
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
+      <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between">
           {/* Timer Display */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
               <div
                 className={`w-3 h-3 rounded-full mr-3 ${
-                  isRunning ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                  isRunning
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-slate-400 dark:bg-slate-500"
                 }`}
               />
               <div>
-                <div className="text-3xl font-mono font-bold text-gray-900">
+                <div className="text-3xl font-mono font-bold text-slate-900 dark:text-slate-100">
                   {formatTime(currentTime)}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-slate-500 dark:text-slate-400">
                   {!activeTimer.endTime ? "Running" : "Completed"}
                 </div>
               </div>
             </div>
 
             {/* Project Info */}
-            <div className="border-l pl-4 ml-4">
-              <div className="text-sm font-medium text-gray-900">
+            <div className="border-l border-slate-200 dark:border-slate-600 pl-4 ml-4">
+              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                 {activeTimer.workProject?.name || "Unknown Project"}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 {activeTimer.activity?.name || "Unknown Activity"}
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 {activeTimer.taskName}
               </div>
               {activeTimer.workProject?.customer?.name && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   Client: {activeTimer.workProject.customer.name}
                 </div>
               )}
@@ -169,7 +173,7 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
               disabled={loading}
               variant="ghost"
               size="sm"
-              className="text-gray-500"
+              className="text-slate-500 dark:text-slate-400"
             >
               <AlertCircle className="h-4 w-4" />
             </Button>
@@ -178,8 +182,8 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
 
         {/* Additional Info */}
         {activeTimer.description && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               <strong>Description:</strong> {activeTimer.description}
             </p>
           </div>
@@ -189,14 +193,14 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
       {/* Stop Confirmation Modal */}
       {showStopConfirm && (
         <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+          <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-w-md w-full mx-4">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">
                 Stop Timer
               </h3>
 
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                   You've been working for{" "}
                   <strong>{formatTime(currentTime)}</strong>. Add a description
                   for this time entry (optional):
@@ -207,7 +211,7 @@ export const TimerWidget = ({ onTimerUpdate, activeTimer, onRefresh }) => {
                   onChange={(e) => setStopDescription(e.target.value)}
                   placeholder="What did you work on?"
                   rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                 />
               </div>
 

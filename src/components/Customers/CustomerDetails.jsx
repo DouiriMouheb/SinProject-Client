@@ -177,7 +177,9 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading customer details...</p>
+          <p className="mt-4 text-slate-600 dark:text-slate-400">
+            Loading customer details...
+          </p>
         </div>
       </div>
     );
@@ -187,10 +189,10 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
     return (
       <div className="text-center py-8">
         <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">
+        <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
           Error Loading Customer
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {error || "Customer not found"}
         </p>
         <div className="mt-6">
@@ -217,14 +219,14 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
                   <span className="hidden sm:inline">Back to Customers</span>
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                    <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
-                      <Building2 className="h-5 w-5 text-blue-600" />
+                  <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+                    <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3 flex-shrink-0">
+                      <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     {customer.name}
                   </h1>
                   {customer.description && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       {customer.description}
                     </p>
                   )}
@@ -261,26 +263,28 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
 
         <div className="space-y-6">
           {/* Basic Information */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
               <Building2 className="h-5 w-5 mr-2" />
               Customer Information
             </h2>
 
             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div>
-                <dt className="text-sm font-medium text-gray-500">
+                <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
                   Customer Name
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">{customer.name}</dd>
+                <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {customer.name}
+                </dd>
               </div>
 
               {customer.description && (
                 <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-gray-500">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Description
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
                     {customer.description}
                   </dd>
                 </div>
@@ -288,14 +292,14 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
 
               {customer.contactEmail && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Contact Email
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-900 flex items-center">
-                    <Mail className="h-4 w-4 mr-1 text-gray-400" />
+                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-center">
+                    <Mail className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
                     <a
                       href={`mailto:${customer.contactEmail}`}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       {customer.contactEmail}
                     </a>
@@ -305,14 +309,14 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
 
               {customer.contactPhone && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Contact Phone
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-900 flex items-center">
-                    <Phone className="h-4 w-4 mr-1 text-gray-400" />
+                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-center">
+                    <Phone className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
                     <a
                       href={`tel:${customer.contactPhone}`}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       {customer.contactPhone}
                     </a>
@@ -322,9 +326,11 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
 
               {customer.address && (
                 <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
-                  <dd className="mt-1 text-sm text-gray-900 flex items-start">
-                    <MapPin className="h-4 w-4 mr-1 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Address
+                  </dt>
+                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-start">
+                    <MapPin className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
                     <span>{customer.address}</span>
                   </dd>
                 </div>
@@ -333,9 +339,9 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
           </div>
 
           {/* Projects */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-gray-900 flex items-center">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 flex items-center">
                 <Briefcase className="h-5 w-5 mr-2" />
                 Projects ({customer.workProjects?.length || 0})
               </h2>
@@ -355,12 +361,12 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
                 {customer.workProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="p-4 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-gray-900">
+                          <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {project.name}
                           </h4>
                           <div className="flex items-center space-x-2">
@@ -368,7 +374,7 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
                               onClick={() => openProjectModal("edit", project)}
                               variant="ghost"
                               size="sm"
-                              className="text-blue-600 hover:text-blue-900"
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -378,14 +384,14 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
                               }
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-900"
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
                         {project.description && (
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                             {project.description}
                           </p>
                         )}
@@ -396,9 +402,11 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500">No projects yet</p>
-                <p className="text-xs text-gray-400">
+                <Briefcase className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  No projects yet
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
                   Click "Add Project" to create the first project for this
                   customer
                 </p>
@@ -407,8 +415,8 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
           </div>
 
           {/* Timeline */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
               <Clock className="h-5 w-5 mr-2" />
               Customer Timeline
             </h2>
@@ -417,10 +425,10 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     Customer Created
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     {formatDateTime(customer.createdAt)}
                   </p>
                 </div>
@@ -429,10 +437,10 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     Last Updated
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     {formatDateTime(customer.updatedAt)}
                   </p>
                 </div>

@@ -448,8 +448,10 @@ export const TimeSheetList = () => {
           {/* Title Section */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Timesheet</h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                Timesheet
+              </h1>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                 Track your time and manage entries
               </p>
             </div>
@@ -458,13 +460,13 @@ export const TimeSheetList = () => {
           {/* Controls Section */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
             {/* View Mode Selector */}
-            <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
+            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1 w-fit">
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "list"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -473,8 +475,8 @@ export const TimeSheetList = () => {
                 onClick={() => setViewMode("daily")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "daily"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 Daily
@@ -483,8 +485,8 @@ export const TimeSheetList = () => {
                 onClick={() => setViewMode("weekly")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "weekly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 Weekly
@@ -493,8 +495,8 @@ export const TimeSheetList = () => {
                 onClick={() => setViewMode("monthly")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "monthly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 Monthly
@@ -544,7 +546,7 @@ export const TimeSheetList = () => {
 
         {/* Date Navigation for Calendar Views */}
         {viewMode !== "list" && (
-          <div className="flex items-center justify-between mb-6 bg-white shadow rounded-lg p-4">
+          <div className="flex items-center justify-between mb-6 bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-4 border border-slate-200 dark:border-slate-700">
             <Button
               onClick={() => navigateDate("prev")}
               variant="ghost"
@@ -554,8 +556,8 @@ export const TimeSheetList = () => {
             </Button>
 
             <div className="flex items-center space-x-3">
-              <Calendar className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <Calendar className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {getViewTitle()}
               </h2>
             </div>
@@ -600,7 +602,7 @@ export const TimeSheetList = () => {
         )}
 
         {/* Time Entries Table */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
           <TimeSheetTable
             timeEntries={timeEntries}
             onEdit={(entry) => openTimeEntryModal("edit", entry)}
@@ -612,8 +614,8 @@ export const TimeSheetList = () => {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && viewMode === "list" && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Showing{" "}
                 {Math.min(
                   (pagination.currentPage - 1) * filters.limit + 1,
@@ -635,7 +637,7 @@ export const TimeSheetList = () => {
                 >
                   Previous
                 </Button>
-                <span className="px-3 py-1 text-sm text-gray-700">
+                <span className="px-3 py-1 text-sm text-slate-700 dark:text-slate-300">
                   Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
                 <Button

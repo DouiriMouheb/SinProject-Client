@@ -274,11 +274,11 @@ export const Users = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <UsersIcon className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+          <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
             Access Denied
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             You don't have permission to view user management.
           </p>
         </div>
@@ -291,7 +291,9 @@ export const Users = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+          <p className="mt-4 text-slate-600 dark:text-slate-400">
+            Loading users...
+          </p>
         </div>
       </div>
     );
@@ -322,10 +324,10 @@ export const Users = () => {
         {/* Header - responsive layout */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               User Management
             </h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               {hasRole("admin")
                 ? "Manage all users across the organization"
                 : `Manage users in the ${user.department} department`}
@@ -365,15 +367,15 @@ export const Users = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-            <div className="text-red-700">{error}</div>
+            <div className="text-red-700 dark:text-red-300">{error}</div>
             <Button
               variant="ghost"
               size="sm"
               onClick={dismissError}
-              className="ml-auto text-red-600 hover:text-red-800"
+              className="ml-auto text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
             >
               Dismiss
             </Button>
@@ -392,7 +394,7 @@ export const Users = () => {
       )}
 
       {/* Users Table - FIXED: Proper prop passing */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
         <UserTable
           users={users}
           onView={viewUser}

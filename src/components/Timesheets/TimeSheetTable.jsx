@@ -82,10 +82,12 @@ export const TimeSheetTable = ({
 
   if (loading && timeEntries.length === 0) {
     return (
-      <div className="bg-white shadow rounded-lg p-8">
+      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-8 border border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading time entries...</span>
+          <span className="ml-3 text-slate-600 dark:text-slate-400">
+            Loading time entries...
+          </span>
         </div>
       </div>
     );
@@ -93,13 +95,13 @@ export const TimeSheetTable = ({
 
   if (timeEntries.length === 0) {
     return (
-      <div className="bg-white shadow rounded-lg p-8">
+      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-8 border border-slate-200 dark:border-slate-700">
         <div className="text-center">
-          <Clock className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <Clock className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+          <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
             No time entries found
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Start tracking your time or adjust your filters
           </p>
         </div>
@@ -108,29 +110,29 @@ export const TimeSheetTable = ({
   }
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+    <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+          <thead className="bg-slate-100 dark:bg-slate-700">
             <tr>
-              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Task & Project
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Date & Time
               </th>
 
               {showUser && (
-                <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   User
                 </th>
               )}
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-slate-50 dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
             {timeEntries.map((entry) => {
               const entryId = entry.id || entry._id;
               const isExpanded = expandedEntry === entryId;
@@ -138,8 +140,8 @@ export const TimeSheetTable = ({
               return (
                 <React.Fragment key={entryId}>
                   <tr
-                    className={`hover:bg-gray-50 transition-colors cursor-pointer ${
-                      isExpanded ? "bg-blue-50" : ""
+                    className={`hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer ${
+                      isExpanded ? "bg-blue-50 dark:bg-blue-900/30" : ""
                     }`}
                     onClick={() => toggleExpanded(entryId)}
                   >

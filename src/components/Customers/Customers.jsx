@@ -213,10 +213,10 @@ export const Customers = () => {
         {/* Header - responsive layout */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               Customer Management
             </h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Manage customers and their projects across the organization
             </p>
           </div>
@@ -252,7 +252,7 @@ export const Customers = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-slate-50 dark:bg-slate-800 overflow-hidden shadow-lg rounded-lg border border-slate-200 dark:border-slate-700">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -260,10 +260,10 @@ export const Customers = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                     Total Customers
                   </dt>
-                  <dd className="text-2xl font-semibold text-gray-900">
+                  <dd className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                     {stats.total}
                   </dd>
                 </dl>
@@ -272,7 +272,7 @@ export const Customers = () => {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-slate-50 dark:bg-slate-800 overflow-hidden shadow-lg rounded-lg border border-slate-200 dark:border-slate-700">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -280,10 +280,10 @@ export const Customers = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                     Active Customers
                   </dt>
-                  <dd className="text-2xl font-semibold text-gray-900">
+                  <dd className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                     {stats.active}
                   </dd>
                 </dl>
@@ -292,7 +292,7 @@ export const Customers = () => {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-slate-50 dark:bg-slate-800 overflow-hidden shadow-lg rounded-lg border border-slate-200 dark:border-slate-700">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -300,10 +300,10 @@ export const Customers = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
                     Total Projects
                   </dt>
-                  <dd className="text-2xl font-semibold text-gray-900">
+                  <dd className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                     {stats.totalProjects}
                   </dd>
                 </dl>
@@ -315,15 +315,15 @@ export const Customers = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-            <div className="text-red-700">{error}</div>
+            <div className="text-red-700 dark:text-red-300">{error}</div>
             <Button
               variant="ghost"
               size="sm"
               onClick={dismissError}
-              className="ml-auto text-red-600 hover:text-red-800"
+              className="ml-auto text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
             >
               Dismiss
             </Button>
@@ -340,7 +340,7 @@ export const Customers = () => {
       )}
 
       {/* Customers Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
         <CustomerTable
           customers={customers}
           onView={viewCustomer}

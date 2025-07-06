@@ -1,6 +1,8 @@
-// src/components/layout/Layout.jsx - Updated with UserProfileModal
+// src/components/layout/Layout.jsx - Updated with UserProfileModal and mobile navigation
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
+import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileHeader } from "./MobileHeader";
 import { UserProfileModal } from "../users/UserProfileModal";
 
 export const Layout = ({ children, currentPage, setCurrentPage }) => {
@@ -11,9 +13,6 @@ export const Layout = ({ children, currentPage, setCurrentPage }) => {
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false);
-      }
     };
 
     checkScreenSize();
@@ -27,10 +26,6 @@ export const Layout = ({ children, currentPage, setCurrentPage }) => {
 
   const handleOpenProfile = () => {
     setShowProfileModal(true);
-    // Close mobile sidebar when opening profile on mobile
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
   };
 
   const handleCloseProfile = () => {
@@ -39,47 +34,44 @@ export const Layout = ({ children, currentPage, setCurrentPage }) => {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
-        {/* Mobile overlay */}
-        {isMobile && sidebarOpen && (
+      <div className="flex h-screen bg-slate-50 dark:bg-[#0f1419] overflow-hidden">
+        {/* Sidebar - Hidden on mobile, visible on desktop */}
+        {!isMobile && (
           <div
-            className="fixed inset-0 bg-white bg-opacity-10 backdrop-blur-md z-40 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
+            className={`${
+              sidebarOpen ? "w-64" : "w-16"
+            } transition-all duration-300 ease-in-out flex-shrink-0`}
+          >
+            <Sidebar
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              sidebarOpen={sidebarOpen}
+              toggleSidebar={toggleSidebar}
+              onOpenProfile={handleOpenProfile}
+            />
+          </div>
         )}
-
-        {/* Sidebar */}
-        <div
-          className={`${
-            isMobile
-              ? sidebarOpen
-                ? "translate-x-0"
-                : "-translate-x-full"
-              : sidebarOpen
-              ? "w-64"
-              : "w-16"
-          } fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out md:relative md:translate-x-0 flex-shrink-0`}
-        >
-          <Sidebar
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            sidebarOpen={sidebarOpen}
-            toggleSidebar={toggleSidebar}
-            isMobile={isMobile}
-            onCloseMobile={() => isMobile && setSidebarOpen(false)}
-            onOpenProfile={handleOpenProfile}
-          />
-        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile Header - Only show on mobile */}
+          {isMobile && <MobileHeader onOpenProfile={handleOpenProfile} />}
+
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 md:p-6">
+            <div className="h-full overflow-y-auto bg-slate-100 dark:bg-[#162032] p-4 md:p-6 pb-20 md:pb-6">
               {children}
             </div>
           </main>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation - Only show on mobile */}
+      {isMobile && (
+        <MobileBottomNav
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+      )}
 
       {/* User Profile Modal */}
       <UserProfileModal

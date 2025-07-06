@@ -21,24 +21,24 @@ export const Input = ({
   const getStateStyles = () => {
     if (hasError) {
       return {
-        border: "border-red-300 focus:border-red-500",
+        border: "border-red-300 dark:border-red-600 focus:border-red-500",
         ring: "focus:ring-red-500",
-        bg: "bg-red-50",
+        bg: "bg-red-50 dark:bg-red-900/20",
       };
     }
 
     if (hasSuccess) {
       return {
-        border: "border-green-300 focus:border-green-500",
+        border: "border-green-300 dark:border-green-600 focus:border-green-500",
         ring: "focus:ring-green-500",
-        bg: "bg-green-50",
+        bg: "bg-green-50 dark:bg-green-900/20",
       };
     }
 
     return {
-      border: "border-gray-300 focus:border-blue-500",
+      border: "border-slate-300 dark:border-slate-600 focus:border-blue-500",
       ring: "focus:ring-blue-500",
-      bg: "bg-white dark:bg-gray-700",
+      bg: "bg-slate-50 dark:bg-slate-700",
     };
   };
 
@@ -56,7 +56,7 @@ export const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="block text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -70,7 +70,7 @@ export const Input = ({
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
             <Icon
               className={`h-5 w-5 ${
-                hasError ? "text-red-400" : "text-gray-400"
+                hasError ? "text-red-400" : "text-slate-400 dark:text-slate-500"
               }`}
             />
           </div>
@@ -86,8 +86,9 @@ export const Input = ({
             ${stateStyles.bg}
             ${stateStyles.border}
             focus:outline-none focus:ring-2 ${stateStyles.ring}
-            disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
-            placeholder:text-gray-400
+            disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed
+            placeholder:text-slate-400 dark:placeholder:text-slate-500
+            text-slate-900 dark:text-slate-100
             ${className}
           `}
           aria-invalid={hasError}

@@ -1,5 +1,5 @@
-// src/contexts/ThemeContext.jsx - Theme context for dark/light mode
-import React, { createContext, useContext, useEffect, useState } from "react";
+// src/contexts/ThemeContext.jsx - Theme context with dark mode as default
+import React, { createContext, useContext, useEffect } from "react";
 
 const ThemeContext = createContext();
 
@@ -12,57 +12,15 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Initialize theme based on system preference or localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === "dark");
-    } else {
-      setIsDarkMode(prefersDark);
-    }
-  }, []);
-
-  // Apply theme to document and save to localStorage
+  // Always use dark mode
   useEffect(() => {
     const root = document.documentElement;
-    if (isDarkMode) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDarkMode]);
-
-  // Listen for system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e) => {
-      // Only update if user hasn't manually set a preference
-      const savedTheme = localStorage.getItem("theme");
-      if (!savedTheme) {
-        setIsDarkMode(e.matches);
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    root.classList.add("dark");
   }, []);
 
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
-  };
-
   const value = {
-    isDarkMode,
-    toggleTheme,
-    theme: isDarkMode ? "dark" : "light",
+    isDarkMode: true,
+    theme: "dark",
   };
 
   return (
