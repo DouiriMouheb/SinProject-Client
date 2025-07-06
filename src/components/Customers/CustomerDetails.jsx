@@ -15,8 +15,11 @@ import {
   Plus,
   MoreVertical,
   Trash2,
+  Save,
+  X,
 } from "lucide-react";
 import { Button } from "../common/Button";
+import { Input } from "../common/Input";
 import { ConfirmationModal } from "../common/ConfirmationModal";
 import { ProjectModal } from "./ProjectModal";
 import { customerService } from "../../services/customers";
@@ -49,6 +52,17 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
   // Confirmation modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Edit mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    contactEmail: "",
+    contactPhone: "",
+    address: "",
+  });
+  const [savingChanges, setSavingChanges] = useState(false);
+
   // Project management states
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -71,6 +85,14 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
 
       if (response.success) {
         setCustomer(response.data.customer);
+        // Set form data for editing
+        setEditForm({
+          name: response.data.customer.name || "",
+          description: response.data.customer.description || "",
+          contactEmail: response.data.customer.contactEmail || "",
+          contactPhone: response.data.customer.contactPhone || "",
+          address: response.data.customer.address || "",
+        });
       }
     } catch (err) {
       console.error("Error loading customer:", err);
@@ -149,6 +171,69 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  // Edit functions
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    // Reset form with current customer data
+    setEditForm({
+      name: customer.name || "",
+      description: customer.description || "",
+      contactEmail: customer.contactEmail || "",
+      contactPhone: customer.contactPhone || "",
+      address: customer.address || "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form to original data
+    setEditForm({
+      name: customer.name || "",
+      description: customer.description || "",
+      contactEmail: customer.contactEmail || "",
+      contactPhone: customer.contactPhone || "",
+      address: customer.address || "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm.name.trim()) {
+      showToast.error("Customer name is required");
+      return;
+    }
+
+    setSavingChanges(true);
+    try {
+      const response = await customerService.updateCustomer(customerId, {
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        contactEmail: editForm.contactEmail.trim(),
+        contactPhone: editForm.contactPhone.trim(),
+        address: editForm.address.trim(),
+      });
+
+      if (response.success) {
+        setCustomer(response.data.customer);
+        setIsEditing(false);
+        showToast.success("Customer updated successfully");
+      } else {
+        showToast.error(response.message || "Failed to update customer");
+      }
+    } catch (err) {
+      console.error("Error updating customer:", err);
+      showToast.error("Failed to update customer");
+    } finally {
+      setSavingChanges(false);
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handleDeleteRequest = () => {
@@ -235,28 +320,60 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={() => onEdit(customer)}
-                variant="secondary"
-                size="sm"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Customer
-              </Button>
+            <div className="flex flex-wrap gap-3">
+              {!isEditing && (
+                <Button onClick={handleStartEdit} variant="secondary" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Customer
+                </Button>
+              )}
 
-              <Button
-                onClick={handleDeleteRequest}
-                variant="danger"
-                size="sm"
-                disabled={actionLoading === "delete"}
-              >
-                {actionLoading === "delete" ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                ) : (
-                  "Delete Customer"
-                )}
-              </Button>
+              {isEditing && (
+                <>
+                  <Button
+                    onClick={handleSaveEdit}
+                    variant="primary"
+                    size="sm"
+                    disabled={savingChanges}
+                  >
+                    {savingChanges ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleCancelEdit}
+                    variant="secondary"
+                    size="sm"
+                    disabled={savingChanges}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              )}
+
+              {!isEditing && (
+                <Button
+                  onClick={handleDeleteRequest}
+                  variant="danger"
+                  size="sm"
+                  disabled={actionLoading === "delete"}
+                >
+                  {actionLoading === "delete" ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    "Delete Customer"
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -275,66 +392,140 @@ export const CustomerDetails = ({ customerId, onBack, onEdit, onDelete }) => {
                   Customer Name
                 </dt>
                 <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                  {customer.name}
+                  {isEditing ? (
+                    <Input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => handleFormChange("name", e.target.value)}
+                      placeholder="Enter customer name"
+                      disabled={savingChanges}
+                    />
+                  ) : (
+                    customer.name
+                  )}
                 </dd>
               </div>
 
-              {customer.description && (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Description
-                  </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
-                    {customer.description}
-                  </dd>
-                </div>
-              )}
+              <div className="sm:col-span-2">
+                <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Description
+                </dt>
+                <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {isEditing ? (
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) =>
+                        handleFormChange("description", e.target.value)
+                      }
+                      placeholder="Enter customer description (optional)"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                      disabled={savingChanges}
+                    />
+                  ) : customer.description ? (
+                    customer.description
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 italic">
+                      No description provided
+                    </span>
+                  )}
+                </dd>
+              </div>
 
-              {customer.contactEmail && (
-                <div>
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Contact Email
-                  </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-center">
-                    <Mail className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
-                    <a
-                      href={`mailto:${customer.contactEmail}`}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      {customer.contactEmail}
-                    </a>
-                  </dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Contact Email
+                </dt>
+                <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {isEditing ? (
+                    <Input
+                      type="email"
+                      value={editForm.contactEmail}
+                      onChange={(e) =>
+                        handleFormChange("contactEmail", e.target.value)
+                      }
+                      placeholder="Enter contact email (optional)"
+                      disabled={savingChanges}
+                    />
+                  ) : customer.contactEmail ? (
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
+                      <a
+                        href={`mailto:${customer.contactEmail}`}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        {customer.contactEmail}
+                      </a>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 italic">
+                      No email provided
+                    </span>
+                  )}
+                </dd>
+              </div>
 
-              {customer.contactPhone && (
-                <div>
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Contact Phone
-                  </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-center">
-                    <Phone className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
-                    <a
-                      href={`tel:${customer.contactPhone}`}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      {customer.contactPhone}
-                    </a>
-                  </dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Contact Phone
+                </dt>
+                <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {isEditing ? (
+                    <Input
+                      type="tel"
+                      value={editForm.contactPhone}
+                      onChange={(e) =>
+                        handleFormChange("contactPhone", e.target.value)
+                      }
+                      placeholder="Enter contact phone (optional)"
+                      disabled={savingChanges}
+                    />
+                  ) : customer.contactPhone ? (
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
+                      <a
+                        href={`tel:${customer.contactPhone}`}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        {customer.contactPhone}
+                      </a>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 italic">
+                      No phone provided
+                    </span>
+                  )}
+                </dd>
+              </div>
 
-              {customer.address && (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Address
-                  </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100 flex items-start">
-                    <MapPin className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
-                    <span>{customer.address}</span>
-                  </dd>
-                </div>
-              )}
+              <div className="sm:col-span-2">
+                <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Address
+                </dt>
+                <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  {isEditing ? (
+                    <textarea
+                      value={editForm.address}
+                      onChange={(e) =>
+                        handleFormChange("address", e.target.value)
+                      }
+                      placeholder="Enter customer address (optional)"
+                      rows={2}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                      disabled={savingChanges}
+                    />
+                  ) : customer.address ? (
+                    <div className="flex items-start">
+                      <MapPin className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
+                      <span>{customer.address}</span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 italic">
+                      No address provided
+                    </span>
+                  )}
+                </dd>
+              </div>
             </dl>
           </div>
 

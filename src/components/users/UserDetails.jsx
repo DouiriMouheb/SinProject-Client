@@ -105,6 +105,7 @@ export const UserDetails = ({
 
   // FIXED: Added state for confirmation modals instead of window.confirm()
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Timesheet download states
   const [downloadingPDF, setDownloadingPDF] = useState(false);
@@ -292,6 +293,45 @@ export const UserDetails = ({
     }));
   };
 
+  const handleDeleteRequest = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!user || actionLoading) return;
+
+    setActionLoading("delete");
+
+    try {
+      const response = await userService.deleteUser(userId);
+
+      if (response.success) {
+        showToast.success("User deleted successfully");
+        setShowDeleteModal(false);
+
+        // Notify parent to refresh the list
+        if (onDelete) {
+          onDelete();
+        }
+
+        onBack(); // Navigate back to list
+      } else {
+        showToast.error(response.message || "Failed to delete user");
+        setShowDeleteModal(false);
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      showToast.error("Failed to delete user");
+      setShowDeleteModal(false);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
   // Access control checks
   const isCurrentUser = userId === currentUser.id || userId === currentUser._id;
   const canEdit = () => {
@@ -442,6 +482,22 @@ export const UserDetails = ({
                       <Download className="h-4 w-4 mr-2" />
                       Download Timesheet
                     </>
+                  )}
+                </Button>
+              )}
+
+              {/* Delete User button - only for admins and not for current user */}
+              {hasRole("admin") && !isCurrentUser && !isEditing && (
+                <Button
+                  onClick={handleDeleteRequest}
+                  variant="danger"
+                  size="sm"
+                  disabled={actionLoading === "delete"}
+                >
+                  {actionLoading === "delete" ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    "Delete User"
                   )}
                 </Button>
               )}
@@ -729,6 +785,26 @@ export const UserDetails = ({
                 "User will need to log in with their existing credentials",
               ]
         }
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={handleDeleteCancel}
+        onConfirm={confirmDelete}
+        title="Delete User"
+        message={`Are you sure you want to delete ${user.name}?`}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={actionLoading === "delete"}
+        itemName={`${user.name} (${user.email})`}
+        details={[
+          "This action cannot be undone",
+          "User data will be permanently removed",
+          "All associated timesheet entries will be affected",
+          "User will be immediately logged out of all sessions",
+        ]}
       />
     </>
   );

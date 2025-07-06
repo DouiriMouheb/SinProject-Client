@@ -167,7 +167,12 @@ export const Users = () => {
     }
   };
 
-  // FIXED: Proper modal-triggered delete handling
+  // Simple refresh callback for UserDetails after it handles deletion internally
+  const handleUserDeleted = () => {
+    loadUsers(); // Just refresh the list
+  };
+
+  // FIXED: Proper modal-triggered delete handling for table actions
   const handleDeleteRequest = (userId) => {
     const user = users.find((u) => (u.id || u._id) === userId);
     if (user) {
@@ -312,7 +317,7 @@ export const Users = () => {
         onStatusToggle={handleToggleStatus}
         onResetPassword={handleResetPassword}
         onChangeRole={handleChangeRole}
-        onDelete={handleDeleteRequest} // Pass the same delete handler
+        onDelete={handleUserDeleted} // Pass refresh callback instead of delete handler
       />
     );
   }

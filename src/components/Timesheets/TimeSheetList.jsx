@@ -20,6 +20,7 @@ import { TimeSheetTable } from "./TimeSheetTable";
 import { TimeSheetFilters } from "./TimeSheetFilters";
 import { TimeSheetModal } from "./TimeSheetModal";
 import { TimerStartModal } from "./TimerStartModal";
+import { TimesheetCalendarView } from "./TimesheetCalendarView";
 import { timerService } from "../../services/timer";
 import { showToast } from "../../utils/toast";
 
@@ -37,7 +38,7 @@ export const TimeSheetList = () => {
   const [modalMode, setModalMode] = useState("create");
 
   // View states
-  const [viewMode, setViewMode] = useState("list"); // "list", "daily", "weekly", "monthly"
+  const [viewMode, setViewMode] = useState("list"); // "list", "calendar", "daily", "weekly", "monthly"
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Data for dropdowns
@@ -211,6 +212,7 @@ export const TimeSheetList = () => {
         };
 
       case "monthly":
+      case "calendar":
         const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         return {
@@ -286,19 +288,29 @@ export const TimeSheetList = () => {
     loadTimeEntries();
   };
 
-  const openTimeEntryModal = (mode, entry = null) => {
+  const openTimeEntryModal = (mode, entry = null, dateInfo = null) => {
     setModalMode(mode);
-    setSelectedTimeEntry(
-      entry || {
-        taskName: "",
-        description: "",
-        workProjectId: "",
-        activityId: "",
-        date: new Date().toISOString().split("T")[0],
-        startTime: "",
-        endTime: "",
-      }
-    );
+
+    let defaultEntry = {
+      taskName: "",
+      description: "",
+      workProjectId: "",
+      activityId: "",
+      date: new Date().toISOString().split("T")[0],
+      startTime: "",
+      endTime: "",
+    };
+
+    // If dateInfo is provided (from calendar), use it
+    if (dateInfo) {
+      defaultEntry = {
+        ...defaultEntry,
+        date: dateInfo.date,
+        startTime: dateInfo.startTime,
+      };
+    }
+
+    setSelectedTimeEntry(entry || defaultEntry);
     setShowTimeEntryModal(true);
   };
 
@@ -472,6 +484,16 @@ export const TimeSheetList = () => {
                 <List className="h-4 w-4" />
               </button>
               <button
+                onClick={() => setViewMode("calendar")}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "calendar"
+                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                <Calendar className="h-4 w-4" />
+              </button>
+              <button
                 onClick={() => setViewMode("daily")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "daily"
@@ -601,57 +623,76 @@ export const TimeSheetList = () => {
           />
         )}
 
-        {/* Time Entries Table */}
-        <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-          <TimeSheetTable
+        {/* Time Entries View */}
+        {viewMode === "calendar" ? (
+          <TimesheetCalendarView
             timeEntries={timeEntries}
-            onEdit={(entry) => openTimeEntryModal("edit", entry)}
-            onDelete={handleDeleteRequest}
-            canEdit={() => true}
-            canDelete={() => true}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            onAddEntry={(dateInfo) =>
+              openTimeEntryModal("create", null, dateInfo)
+            }
+            onEditEntry={(entry) => openTimeEntryModal("edit", entry)}
+            onDeleteEntry={handleDeleteRequest}
+            onStartTimer={openTimerStartModal}
+            activeTimer={activeTimer}
+            projects={projects}
+            activities={activities}
+            customers={customers}
             loading={loading}
           />
+        ) : (
+          <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+            <TimeSheetTable
+              timeEntries={timeEntries}
+              onEdit={(entry) => openTimeEntryModal("edit", entry)}
+              onDelete={handleDeleteRequest}
+              canEdit={() => true}
+              canDelete={() => true}
+              loading={loading}
+            />
 
-          {/* Pagination */}
-          {pagination.totalPages > 1 && viewMode === "list" && (
-            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <div className="text-sm text-slate-500 dark:text-slate-400">
-                Showing{" "}
-                {Math.min(
-                  (pagination.currentPage - 1) * filters.limit + 1,
-                  pagination.totalEntries
-                )}{" "}
-                to{" "}
-                {Math.min(
-                  pagination.currentPage * filters.limit,
-                  pagination.totalEntries
-                )}{" "}
-                of {pagination.totalEntries} entries
+            {/* Pagination */}
+            {pagination.totalPages > 1 && viewMode === "list" && (
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  Showing{" "}
+                  {Math.min(
+                    (pagination.currentPage - 1) * filters.limit + 1,
+                    pagination.totalEntries
+                  )}{" "}
+                  to{" "}
+                  {Math.min(
+                    pagination.currentPage * filters.limit,
+                    pagination.totalEntries
+                  )}{" "}
+                  of {pagination.totalEntries} entries
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrev}
+                  >
+                    Previous
+                  </Button>
+                  <span className="px-3 py-1 text-sm text-slate-700 dark:text-slate-300">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNext}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.currentPage - 1)}
-                  disabled={!pagination.hasPrev}
-                >
-                  Previous
-                </Button>
-                <span className="px-3 py-1 text-sm text-slate-700 dark:text-slate-300">
-                  Page {pagination.currentPage} of {pagination.totalPages}
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.currentPage + 1)}
-                  disabled={!pagination.hasNext}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Time Entry Modal */}
         <TimeSheetModal

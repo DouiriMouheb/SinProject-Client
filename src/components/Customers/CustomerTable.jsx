@@ -1,15 +1,6 @@
 // src/components/Customers/CustomerTable.jsx - Customer table component
 import React from "react";
-import {
-  Eye,
-  Edit,
-  Trash2,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  MoreVertical,
-} from "lucide-react";
+import { Settings, Building2, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "../common/Button";
 
 const formatDate = (dateString) => {
@@ -140,23 +131,7 @@ export const CustomerTable = ({ customers = [], onView, onEdit, onDelete }) => {
                       size="sm"
                       className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                     >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => onEdit(customer)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => onDelete(customer)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                      <Settings className="h-4 w-4" />
                     </Button>
                   </div>
                 </td>
