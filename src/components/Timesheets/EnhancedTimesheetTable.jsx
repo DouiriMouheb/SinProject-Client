@@ -283,8 +283,9 @@ export const EnhancedTimeSheetTable = ({
                 setSearchTerm(e.target.value);
                 setCurrentPage(1); // Reset to first page on search
               }}
-              className="pl-10 pr-10"
+              className="pl-10 pr-10 rounded-full border border-black shadow-lg focus:ring-2 focus:ring-blue-500"
               aria-label="Search"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
             />
             {!searchTerm && (
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -307,44 +308,20 @@ export const EnhancedTimeSheetTable = ({
             {/* Reset Filters */}
             {(searchTerm ||
               sortConfig.key !== "startTime" ||
-              sortConfig.direction !== "desc") && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={resetFilters}
-                className="flex items-center space-x-1"
-              >
-                <X className="h-4 w-4" />
-                <span className="hidden sm:inline">Reset</span>
-              </Button>
-            )}
-
-            {/* Page Size Selector */}
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="text-sm border border-gray-300 rounded-md bg-white text-gray-900 px-2 py-1"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
+              sortConfig.direction !== "desc") &&
+              !searchTerm && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="flex items-center space-x-1"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Reset</span>
+                </Button>
+              )}
           </div>
         </div>
-
-        {/* Search Results Info */}
-        {searchTerm && (
-          <div className="mt-3 text-sm text-gray-600">
-            Found {sortedEntries.length}{" "}
-            {sortedEntries.length === 1 ? "entry" : "entries"}
-            matching "{searchTerm}"
-          </div>
-        )}
       </div>
 
       {/* Table */}
@@ -448,9 +425,8 @@ export const EnhancedTimeSheetTable = ({
             {/* Pagination and Results Info */}
             {sortedEntries.length > 0 && (
               <div className="px-4 py-3 border-t border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                  {/* Results Info - always at the bottom on mobile */}
-                  <div className="text-sm text-gray-700 order-1 sm:order-2 flex justify-center sm:justify-start">
+                <div className="flex flex-col sm:flex-row sm:items-center w-full">
+                  <div className="text-sm text-gray-700 flex-1 flex items-center justify-center sm:justify-start">
                     Showing {startEntry} to {endEntry} of {sortedEntries.length}{" "}
                     entries
                     {searchTerm && (
@@ -460,91 +436,105 @@ export const EnhancedTimeSheetTable = ({
                       </span>
                     )}
                   </div>
-                  {/* Pagination Controls */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center space-x-1 order-2 sm:order-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentPage(1)}
-                        disabled={currentPage === 1}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ChevronsLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(1, prev - 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      {/* Page Numbers */}
-                      <div className="flex items-center space-x-1">
-                        {Array.from(
-                          { length: Math.min(5, totalPages) },
-                          (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i;
-                            } else {
-                              pageNum = currentPage - 2 + i;
-                            }
-                            if (pageNum < 1 || pageNum > totalPages)
-                              return null;
-                            return (
-                              <Button
-                                key={pageNum}
-                                variant={
-                                  pageNum === currentPage ? "primary" : "ghost"
-                                }
-                                size="sm"
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`h-8 w-8 p-0 ${
-                                  pageNum === currentPage
-                                    ? "bg-blue-100 text-blue-700"
-                                    : ""
-                                }`}
-                              >
-                                {pageNum}
-                              </Button>
-                            );
-                          }
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(totalPages, prev + 1)
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentPage(totalPages)}
-                        disabled={currentPage === totalPages}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ChevronsRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex justify-end mt-2 sm:mt-0">
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-2 text-sm border border-gray-900 rounded-full bg-white text-gray-900 px-2 py-1 shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{ minWidth: 56 }}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
                 </div>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center space-x-1 order-2 sm:order-1 mt-2 sm:mt-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {/* Page Numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          if (pageNum < 1 || pageNum > totalPages) return null;
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={
+                                pageNum === currentPage ? "primary" : "ghost"
+                              }
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`h-8 w-8 p-0 ${
+                                pageNum === currentPage
+                                  ? "bg-blue-100 text-blue-700"
+                                  : ""
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        }
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
