@@ -373,18 +373,17 @@ export const TimeSheetList = () => {
               >
                 <List className="h-4 w-4" />
               </button>
-              <button
+              {/*
+              <Button
+                variant={viewMode === "calendar" ? "primary" : "ghost"}
+                size="sm"
                 onClick={() => setViewMode("calendar")}
-                className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === "calendar"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-                style={{ minWidth: 0 }}
-                aria-label="Calendar View"
+                className="h-8 w-8 p-0"
+                title="Calendar view"
               >
                 <Calendar className="h-4 w-4" />
-              </button>
+              </Button>
+              */}
               <Button
                 onClick={loadTimeEntries}
                 variant="secondary"
@@ -402,7 +401,6 @@ export const TimeSheetList = () => {
                 aria-label="New Entry"
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden lg:inline ml-2">New Entry</span>
               </Button>
             </div>
           </div>

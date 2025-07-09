@@ -337,9 +337,9 @@ export const NewTimeEntryModal = ({
       title={mode === "create" ? "Add New Time Entry" : "Edit Time Entry"}
       size="xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {/* First row - Selection fields in 3 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Organization Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -423,7 +423,7 @@ export const NewTimeEntryModal = ({
         </div>
 
         {/* Second row - Process and Activity in 2 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Process Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -484,7 +484,7 @@ export const NewTimeEntryModal = ({
         </div>
 
         {/* Third row - Task details in 2 columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Task Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -521,20 +521,20 @@ export const NewTimeEntryModal = ({
 
         {/* Fourth row - Description full width */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Description
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
             placeholder="Optional task description"
-            rows={3}
+            rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         {/* Fifth row - Time Range in 2 columns */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Clock className="h-4 w-4 inline mr-2" />
@@ -562,7 +562,7 @@ export const NewTimeEntryModal = ({
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
+        <div className="flex justify-end space-x-2 pt-2 border-t">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
