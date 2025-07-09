@@ -10,6 +10,8 @@ export const OrganizationTable = ({
   onDelete,
   loading,
 }) => {
+  console.log("Organizations passed to OrganizationTable:", organizations);
+
   if (loading && organizations.length === 0) {
     return (
       <div className="flex justify-center">

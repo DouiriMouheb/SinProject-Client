@@ -119,7 +119,7 @@ export const EnhancedTimeSheetTable = ({
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [expandedEntry, setExpandedEntry] = useState(null);
+  // Removed expandedEntry state and toggle logic
 
   // Use fixed columns - no customization
   const columns = DEFAULT_COLUMNS;
@@ -252,9 +252,7 @@ export const EnhancedTimeSheetTable = ({
 
   const visibleColumns = columns.filter((col) => col.visible);
 
-  const toggleExpanded = (entryId) => {
-    setExpandedEntry(expandedEntry === entryId ? null : entryId);
-  };
+  // Removed toggleExpanded function
 
   if (loading && timeEntries.length === 0) {
     return (
@@ -279,18 +277,25 @@ export const EnhancedTimeSheetTable = ({
             </div>
             <Input
               type="text"
-              placeholder="Search by process, activity, customer, organization, or notes..."
+              placeholder=""
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1); // Reset to first page on search
               }}
               className="pl-10 pr-10"
+              aria-label="Search"
             />
+            {!searchTerm && (
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+            )}
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                aria-label="Clear search"
               >
                 <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
               </button>
@@ -357,119 +362,51 @@ export const EnhancedTimeSheetTable = ({
             </p>
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("startTime")}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Date</span>
-                    <ArrowUpDown
-                      className={`h-3 w-3 ${
-                        sortConfig.key === "startTime"
-                          ? "text-blue-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => handleSort("processId")}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>Process & Activity</span>
-                    <ArrowUpDown
-                      className={`h-3 w-3 ${
-                        sortConfig.key === "processId"
-                          ? "text-blue-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                  </div>
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedEntries.map((entry) => {
-                const entryId = entry.id || entry._id;
-                const isExpanded = expandedEntry === entryId;
-
-                return (
-                  <React.Fragment key={entryId}>
+          <div>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Start - End
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Process
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedEntries.map((entry) => {
+                  if (!entry || (!entry.id && !entry._id)) return null;
+                  const entryId = entry.id || entry._id;
+                  return (
                     <tr
-                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${
-                        isExpanded ? "bg-blue-50" : ""
-                      }`}
-                      onClick={() => toggleExpanded(entryId)}
+                      key={entryId}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       {/* Date Column */}
                       <td className="px-4 py-3 text-sm">
                         <div className="flex items-center text-gray-900">
                           <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                          <div>
-                            <div className="font-medium">
-                              {formatDate(entry.startTime)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {formatTime(entry.startTime)}
-                              {entry.endTime &&
-                                ` - ${formatTime(entry.endTime)}`}
-                            </div>
+                          <div className="font-medium">
+                            {formatDate(entry.startTime)}
                           </div>
                         </div>
                       </td>
-
-                      {/* Task Details Column */}
+                      {/* Start-End Time Column */}
                       <td className="px-4 py-3 text-sm">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-gray-900">
-                              {getProcessName(entry.processId)}
-                            </span>
-                            {entry.activityId && (
-                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
-                                {getActivityName(entry.activityId)}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center space-x-2 text-sm">
-                            <span className="text-gray-600">
-                              {getOrganizationName(entry.organizationId)}
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <span className="text-gray-600">
-                              {getCustomerName(entry.customerId)}
-                            </span>
-                          </div>
-
-                          {entry.workLocation && (
-                            <div className="text-xs text-gray-500">
-                              📍 {entry.workLocation}
-                            </div>
-                          )}
-
-                          {entry.notes && (
-                            <div className="text-xs text-gray-600 line-clamp-2">
-                              {entry.notes}
-                            </div>
-                          )}
-
-                          {entry.totalHours && (
-                            <div className="flex items-center text-xs text-blue-600 font-medium">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {formatDuration(entry.totalHours)}
-                            </div>
-                          )}
-                        </div>
+                        {formatTime(entry.startTime)}
+                        {entry.endTime && ` - ${formatTime(entry.endTime)}`}
                       </td>
-
+                      {/* Process Column */}
+                      <td className="px-4 py-3 text-sm">
+                        {getProcessName(entry.processId)}
+                      </td>
                       {/* Actions Column */}
                       <td className="px-4 py-3 text-sm text-right w-32">
                         <div className="flex items-center justify-end space-x-2">
@@ -501,199 +438,118 @@ export const EnhancedTimeSheetTable = ({
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
-                          <div className="ml-1">
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-400" />
-                            )}
-                          </div>
                         </div>
                       </td>
                     </tr>
-
-                    {/* Expanded Row */}
-                    {isExpanded && (
-                      <tr className="bg-blue-50">
-                        <td colSpan={3} className="px-4 py-4">
-                          <div className="max-w-4xl">
-                            {/* Notes */}
-                            {entry.notes && (
-                              <div className="mb-3">
-                                <h4 className="text-sm font-medium text-gray-900 mb-2">
-                                  Notes
-                                </h4>
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-100 p-3 rounded-md">
-                                  {entry.notes}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Additional Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="font-medium text-gray-900">
-                                  Organization:
-                                </span>
-                                <p className="text-gray-700">
-                                  {getOrganizationName(entry.organizationId)}
-                                </p>
-                              </div>
-
-                              <div>
-                                <span className="font-medium text-gray-900">
-                                  Customer:
-                                </span>
-                                <p className="text-gray-700">
-                                  {getCustomerName(entry.customerId)}
-                                </p>
-                              </div>
-
-                              <div>
-                                <span className="font-medium text-gray-900">
-                                  Work Location:
-                                </span>
-                                <p className="text-gray-700">
-                                  {entry.workLocation || "N/A"}
-                                </p>
-                              </div>
-
-                              <div>
-                                <span className="font-medium text-gray-900">
-                                  Created:
-                                </span>
-                                <p className="text-gray-700">
-                                  {entry.createdAt
-                                    ? new Date(entry.createdAt).toLocaleString()
-                                    : "N/A"}
-                                </p>
-                              </div>
-
-                              {entry.endTime && (
-                                <div>
-                                  <span className="font-medium text-gray-900">
-                                    Completed:
-                                  </span>
-                                  <p className="text-gray-700">
-                                    {new Date(entry.endTime).toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-
-                              <div>
-                                <span className="font-medium text-gray-900">
-                                  Total Hours:
-                                </span>
-                                <p className="text-gray-700 font-medium">
-                                  {formatDuration(entry.totalHours || 0)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {/* Pagination and Results Info */}
+            {sortedEntries.length > 0 && (
+              <div className="px-4 py-3 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  {/* Results Info - always at the bottom on mobile */}
+                  <div className="text-sm text-gray-700 order-1 sm:order-2 flex justify-center sm:justify-start">
+                    Showing {startEntry} to {endEntry} of {sortedEntries.length}{" "}
+                    entries
+                    {searchTerm && (
+                      <span className="text-gray-500">
+                        {" "}
+                        (filtered from {timeEntries.length} total)
+                      </span>
                     )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {sortedEntries.length > 0 && (
-        <div className="px-4 py-3 border-t border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            {/* Results Info */}
-            <div className="text-sm text-gray-700">
-              Showing {startEntry} to {endEntry} of {sortedEntries.length}{" "}
-              entries
-              {searchTerm && (
-                <span className="text-gray-500">
-                  {" "}
-                  (filtered from {timeEntries.length} total)
-                </span>
-              )}
-            </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(1, prev - 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                {/* Page Numbers */}
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
+                  </div>
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center space-x-1 order-2 sm:order-1">
                       <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "primary" : "ghost"}
+                        variant="ghost"
                         size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
                         className="h-8 w-8 p-0"
                       >
-                        {pageNum}
+                        <ChevronsLeft className="h-4 w-4" />
                       </Button>
-                    );
-                  })}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      {/* Page Numbers */}
+                      <div className="flex items-center space-x-1">
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            if (pageNum < 1 || pageNum > totalPages)
+                              return null;
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={
+                                  pageNum === currentPage ? "primary" : "ghost"
+                                }
+                                size="sm"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`h-8 w-8 p-0 ${
+                                  pageNum === currentPage
+                                    ? "bg-blue-100 text-blue-700"
+                                    : ""
+                                }`}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(totalPages, prev + 1)
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronsRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

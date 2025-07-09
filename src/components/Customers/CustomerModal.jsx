@@ -75,8 +75,8 @@ export const CustomerModal = ({
       const data = await response.json();
       console.log("Organizations in CustomerModal:", data);
 
-      if (Array.isArray(data)) {
-        setOrganizations(data);
+      if (data.success && Array.isArray(data.data)) {
+        setOrganizations(data.data); // Correctly set the organizations array
       } else {
         console.error("Unexpected response format:", data);
         showToast.error("Invalid organization data format");
@@ -208,11 +208,7 @@ export const CustomerModal = ({
               onChange={(e) =>
                 handleInputChange("organizationId", e.target.value)
               }
-              disabled={
-                mode === "edit" ||
-                loadingOrganizations ||
-                customer?.organizationId
-              }
+              disabled={loadingOrganizations} // Always enable dropdown for creation
             >
               <option value="">Select Organization</option>
               {organizations.map((org) => (

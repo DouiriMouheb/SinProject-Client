@@ -6,7 +6,7 @@ import { MobileHeader } from "./MobileHeader";
 import { UserProfileModal } from "../users/UserProfileModal";
 
 export const Layout = ({ children, currentPage, setCurrentPage }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 

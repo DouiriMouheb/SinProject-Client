@@ -6,9 +6,13 @@ export const timesheetService = {
   async createTimeEntry(entryData) {
     try {
       const response = await apiClient.post("/timesheets/entries", entryData);
+      // Always return the actual time entry object
       return {
         success: true,
-        data: response.data,
+        data:
+          response.data?.data?.timeEntry ||
+          response.data?.timeEntry ||
+          response.data,
       };
     } catch (error) {
       console.error("Error creating time entry:", error);

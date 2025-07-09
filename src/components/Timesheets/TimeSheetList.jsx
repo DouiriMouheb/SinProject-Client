@@ -89,7 +89,7 @@ export const TimeSheetList = () => {
     try {
       const response = await organizationService.getUserOrganizations();
       if (response.success) {
-        setOrganizations(response.data || []);
+        setOrganizations(response.data.organizations || []); // Extract organizations array
       } else {
         console.error("Failed to load organizations:", response);
         showToast.error("Failed to load organizations");
@@ -162,7 +162,7 @@ export const TimeSheetList = () => {
     try {
       const response = await customerService.getCustomers();
       if (response.success) {
-        setCustomers(response.data || []);
+        setCustomers(response.data.customers || []); // Extract customers array
       } else {
         console.error("Failed to load customers:", response);
         showToast.error("Failed to load customers");
@@ -275,47 +275,19 @@ export const TimeSheetList = () => {
   };
 
   const handleTimeEntrySave = async (entryData) => {
-    const loadingToastId = showToast.loading(
-      modalMode === "create"
-        ? "Creating time entry..."
-        : "Updating time entry..."
-    );
-
-    try {
-      setError(null);
-
-      if (modalMode === "create") {
-        const response = await timesheetService.createTimeEntry(entryData);
-        if (response.success) {
-          setTimeEntries((prev) => [response.data, ...prev]);
-          showToast.dismiss(loadingToastId);
-          showToast.success("Time entry created successfully");
-          setShowTimeEntryModal(false);
-          loadTimeEntries();
-        }
-      } else if (modalMode === "edit") {
-        const response = await timesheetService.updateTimeEntry(
-          selectedTimeEntry.id || selectedTimeEntry._id,
-          entryData
-        );
-        if (response.success) {
-          setTimeEntries((prev) =>
-            prev.map((entry) =>
-              (entry.id || entry._id) ===
-              (selectedTimeEntry.id || selectedTimeEntry._id)
-                ? response.data
-                : entry
-            )
-          );
-          showToast.dismiss(loadingToastId);
-          showToast.success("Time entry updated successfully");
-          setShowTimeEntryModal(false);
-        }
-      }
-    } catch (err) {
-      console.error("Error saving time entry:", err);
-      showToast.dismiss(loadingToastId);
-      showToast.error("Failed to save time entry. Please try again.");
+    // Only update state, do not close modal or reload here. Modal handles API and close.
+    if (modalMode === "create") {
+      setTimeEntries((prev) => [entryData, ...prev]);
+      loadTimeEntries();
+    } else if (modalMode === "edit") {
+      setTimeEntries((prev) =>
+        prev.map((entry) =>
+          (entry.id || entry._id) === (entryData.id || entryData._id)
+            ? entryData
+            : entry
+        )
+      );
+      loadTimeEntries();
     }
   };
 
@@ -388,48 +360,49 @@ export const TimeSheetList = () => {
           {/* Controls Section */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
             {/* View Mode Selector */}
-            <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
+            <div className="flex flex-row items-center justify-center gap-2 w-full max-w-xs mx-auto mb-2">
               <button
                 onClick={() => setViewMode("list")}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "list"
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
+                style={{ minWidth: 0 }}
+                aria-label="List View"
               >
                 <List className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setViewMode("calendar")}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "calendar"
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
+                style={{ minWidth: 0 }}
+                aria-label="Calendar View"
               >
                 <Calendar className="h-4 w-4" />
               </button>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 lg:space-x-2">
               <Button
                 onClick={loadTimeEntries}
                 variant="secondary"
                 disabled={loading}
-                className="w-full lg:w-auto"
+                className="px-2 py-1"
+                aria-label="Refresh"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
                 />
               </Button>
-
               <Button
                 onClick={() => openTimeEntryModal("create")}
-                className="w-full lg:w-auto"
+                className="px-2 py-1"
+                aria-label="New Entry"
               >
                 <Plus className="h-4 w-4" />
-                New Entry
+                <span className="hidden lg:inline ml-2">New Entry</span>
               </Button>
             </div>
           </div>

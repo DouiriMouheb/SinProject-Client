@@ -50,14 +50,10 @@ export const Organizations = () => {
       const result = await organizationService.getUserOrganizations();
       console.log("Organizations service response:", result);
 
-      if (result.success && result.data) {
-        // Extract organizations from the nested data structure
-        const organizationsArray =
-          result.data.data?.organizations || result.data.organizations || [];
-        setOrganizations(
-          Array.isArray(organizationsArray) ? organizationsArray : []
-        );
+      if (result.success && Array.isArray(result.data)) {
+        setOrganizations(result.data); // Ensure organizations are set correctly
       } else {
+        console.error("Unexpected response format:", result);
         setOrganizations([]);
       }
     } catch (err) {
