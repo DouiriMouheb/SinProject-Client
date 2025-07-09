@@ -20,8 +20,11 @@ export const CustomerModal = ({
     contactEmail: "",
     contactPhone: "",
     address: "",
+    organizationId: customer?.organizationId || "",
   });
+  const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export const CustomerModal = ({
           contactEmail: customer.contactEmail || "",
           contactPhone: customer.contactPhone || "",
           address: customer.address || "",
+          organizationId: customer.organizationId || "",
         });
       } else {
         setFormData({
@@ -41,11 +45,49 @@ export const CustomerModal = ({
           contactEmail: "",
           contactPhone: "",
           address: "",
+          organizationId: customer?.organizationId || "",
         });
       }
       setErrors({});
+      loadOrganizations();
     }
   }, [isOpen, mode, customer]);
+
+  const loadOrganizations = async () => {
+    setLoadingOrganizations(true);
+    try {
+      // Direct call to the backend API to ensure we're getting the data
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+        }/organizations`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Organizations in CustomerModal:", data);
+
+      if (Array.isArray(data)) {
+        setOrganizations(data);
+      } else {
+        console.error("Unexpected response format:", data);
+        showToast.error("Invalid organization data format");
+      }
+    } catch (error) {
+      console.error("Error loading organizations:", error);
+      showToast.error("Failed to load organizations");
+    } finally {
+      setLoadingOrganizations(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -66,6 +108,10 @@ export const CustomerModal = ({
 
     if (formData.contactEmail && !/\S+@\S+\.\S+/.test(formData.contactEmail)) {
       newErrors.contactEmail = "Please enter a valid email address";
+    }
+
+    if (!formData.organizationId) {
+      newErrors.organizationId = "Organization is required";
     }
 
     setErrors(newErrors);
@@ -89,17 +135,30 @@ export const CustomerModal = ({
         contactEmail: formData.contactEmail.trim() || null,
         contactPhone: formData.contactPhone.trim() || null,
         address: formData.address.trim() || null,
+        organizationId: formData.organizationId,
       };
 
+      let responseData;
+
       if (mode === "create") {
-        await customerService.createCustomer(cleanedData);
+        const response = await customerService.createCustomer(cleanedData);
+        console.log("Customer created response:", response);
+        responseData = response.data ? response.data.customer : response;
         showToast.success("Customer created successfully");
       } else {
-        await customerService.updateCustomer(customer.id, cleanedData);
+        const response = await customerService.updateCustomer(
+          customer.id,
+          cleanedData
+        );
+        console.log("Customer updated response:", response);
+        responseData = response.data ? response.data.customer : response;
         showToast.success("Customer updated successfully");
       }
 
-      onSuccess();
+      console.log("Passing customer data back to parent:", responseData);
+
+      // Pass the created/updated customer back to the parent component
+      onSuccess(responseData);
       onClose();
     } catch (error) {
       console.error("Error saving customer:", error);
@@ -134,6 +193,47 @@ export const CustomerModal = ({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Organization Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Organization
+          </label>
+          <div className="relative">
+            <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <select
+              className={`pl-10 w-full border ${
+                errors.organizationId ? "border-red-500" : "border-gray-300"
+              } rounded-md shadow-sm py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              value={formData.organizationId}
+              onChange={(e) =>
+                handleInputChange("organizationId", e.target.value)
+              }
+              disabled={
+                mode === "edit" ||
+                loadingOrganizations ||
+                customer?.organizationId
+              }
+            >
+              <option value="">Select Organization</option>
+              {organizations.map((org) => (
+                <option key={org.id || org._id} value={org.id || org._id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+            {errors.organizationId && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.organizationId}
+              </p>
+            )}
+            {loadingOrganizations && (
+              <p className="mt-1 text-sm text-gray-500">
+                Loading organizations...
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Customer Name */}
         <div>
           <Input

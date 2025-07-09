@@ -33,16 +33,11 @@ import { DailyLoginTracker } from "../common/DailyLoginTracker"; // ADDED: Impor
 
 const getRoleColor = (role) => {
   const colors = {
-    admin:
-      "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700",
-    manager:
-      "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700",
-    user: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700",
+    admin: "bg-red-100 text-red-800 border-red-200",
+    manager: "bg-blue-100 text-blue-800 border-blue-200",
+    user: "bg-green-100 text-green-800 border-green-200",
   };
-  return (
-    colors[role] ||
-    "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-600"
-  );
+  return colors[role] || "bg-gray-100 text-gray-800 border-gray-200";
 };
 
 const formatDateTime = (dateString) => {
@@ -347,9 +342,7 @@ export const UserDetails = ({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">
-            Loading user details...
-          </p>
+          <p className="mt-4 text-gray-600">Loading user details...</p>
         </div>
       </div>
     );
@@ -359,10 +352,10 @@ export const UserDetails = ({
     return (
       <div className="text-center py-8">
         <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-        <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+        <h3 className="mt-2 text-sm font-medium text-gray-900">
           Error Loading User
         </h3>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-gray-500">
           {error || "User not found"}
         </p>
         <div className="mt-6">
@@ -392,7 +385,7 @@ export const UserDetails = ({
                   <span className="hidden sm:inline">Back to Users</span>
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+                  <h1 className="text-2xl font-bold text-gray-900 flex items-center">
                     {/* FIXED: Use ProfilePicture instead of simple div */}
                     <ProfilePicture
                       user={user}
@@ -406,16 +399,14 @@ export const UserDetails = ({
                       </span>
                     )}
                   </h1>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    {user.email}
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">{user.email}</p>
 
                   {/* Inline daily activity for current user */}
                   {isCurrentUser && (
                     <div className="mt-2">
                       <DailyLoginTracker
                         variant="inline"
-                        className="text-sm bg-blue-50 dark:bg-slate-700 border border-blue-200 dark:border-slate-600 rounded-md px-3 py-2"
+                        className="text-sm bg-blue-50 border border-blue-200 rounded-md px-3 py-2"
                       />
                     </div>
                   )}
@@ -509,18 +500,18 @@ export const UserDetails = ({
           {/* Main Content */}
           <div className="space-y-6">
             {/* Basic Information */}
-            <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+            <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2" />
                 Basic Information
               </h2>
 
               <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                 <div>
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  <dt className="text-sm font-medium text-gray-500">
                     Full Name
                   </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  <dd className="mt-1 text-sm text-gray-900">
                     {isEditing ? (
                       <Input
                         type="text"
@@ -538,10 +529,10 @@ export const UserDetails = ({
                 </div>
 
                 <div>
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  <dt className="text-sm font-medium text-gray-500">
                     Email Address
                   </dt>
-                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                  <dd className="mt-1 text-sm text-gray-900">
                     {isEditing ? (
                       <Input
                         type="email"
@@ -554,7 +545,7 @@ export const UserDetails = ({
                       />
                     ) : (
                       <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-1 text-slate-400 dark:text-slate-500" />
+                        <Mail className="h-4 w-4 mr-1 text-gray-400" />
                         {user.email}
                       </div>
                     )}
@@ -562,9 +553,7 @@ export const UserDetails = ({
                 </div>
 
                 <div>
-                  <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Role
-                  </dt>
+                  <dt className="text-sm font-medium text-gray-500">Role</dt>
                   <dd className="mt-1">
                     {isEditing ? (
                       <select
@@ -572,7 +561,7 @@ export const UserDetails = ({
                         onChange={(e) =>
                           handleFormChange("role", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={savingChanges}
                       >
                         <option value="user">User</option>
@@ -594,14 +583,14 @@ export const UserDetails = ({
             </div>
 
             {/* Account Status */}
-            <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+            <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <Activity className="h-5 w-5 mr-2" />
                 Account Status
               </h2>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-700">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
                   <div className="flex items-center">
                     {user.isActive ? (
                       <UserCheck className="h-5 w-5 text-green-500 mr-3" />
@@ -609,7 +598,7 @@ export const UserDetails = ({
                       <UserX className="h-5 w-5 text-red-500 mr-3" />
                     )}
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      <p className="text-sm font-medium text-gray-900">
                         Account Status
                       </p>
                       <p
@@ -640,14 +629,14 @@ export const UserDetails = ({
                 </div>
 
                 {isAccountLocked && (
-                  <div className="p-4 border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                  <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
                     <div className="flex items-center">
                       <AlertTriangle className="h-5 w-5 text-red-500 mr-3" />
                       <div>
-                        <p className="text-sm font-medium text-red-900 dark:text-red-300">
+                        <p className="text-sm font-medium text-red-900">
                           Account Locked
                         </p>
-                        <p className="text-sm text-red-700 dark:text-red-400">
+                        <p className="text-sm text-red-700">
                           Locked until {formatDateTime(user.lockUntil)} due to
                           multiple failed login attempts
                         </p>
@@ -657,28 +646,24 @@ export const UserDetails = ({
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-700">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex items-center">
-                      <LogIn className="h-4 w-4 text-slate-400 dark:text-slate-500 mr-2" />
+                      <LogIn className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Last Login
-                        </p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        <p className="text-xs text-gray-500">Last Login</p>
+                        <p className="text-sm font-medium text-gray-900">
                           {formatRelativeTime(user.lastLogin)}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-700">
+                  <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div className="flex items-center">
-                      <AlertCircle className="h-4 w-4 text-slate-400 dark:text-slate-500 mr-2" />
+                      <AlertCircle className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Failed Attempts
-                        </p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        <p className="text-xs text-gray-500">Failed Attempts</p>
+                        <p className="text-sm font-medium text-gray-900">
                           {user.loginAttempts || 0}
                         </p>
                       </div>
@@ -690,8 +675,8 @@ export const UserDetails = ({
 
             {/* Daily Login Tracker - only show for current user or if viewing others as admin/manager */}
             {(isCurrentUser || canEdit()) && (
-              <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-                <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+              <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <Calendar className="h-5 w-5 mr-2" />
                   Daily Activity
                 </h2>
@@ -706,8 +691,8 @@ export const UserDetails = ({
             )}
 
             {/* Account Timeline */}
-            <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+            <div className="bg-white shadow-lg rounded-lg p-6 border border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                 <Clock className="h-5 w-5 mr-2" />
                 Account Timeline
               </h2>
@@ -716,10 +701,10 @@ export const UserDetails = ({
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    <p className="text-sm font-medium text-gray-900">
                       Account Created
                     </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-gray-500">
                       {formatDateTime(user.createdAt)}
                     </p>
                   </div>
@@ -728,10 +713,10 @@ export const UserDetails = ({
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-blue-400 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    <p className="text-sm font-medium text-gray-900">
                       Last Updated
                     </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-gray-500">
                       {formatDateTime(user.updatedAt)}
                     </p>
                   </div>
@@ -741,10 +726,10 @@ export const UserDetails = ({
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0 w-2 h-2 bg-purple-400 rounded-full"></div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      <p className="text-sm font-medium text-gray-900">
                         Last Login
                       </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <p className="text-sm text-gray-500">
                         {formatDateTime(user.lastLogin)}
                       </p>
                     </div>

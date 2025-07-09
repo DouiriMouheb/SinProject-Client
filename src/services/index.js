@@ -1,23 +1,40 @@
 // src/services/index.js
-// Main services export file - this allows clean imports throughout the app
+// Main services export file - Updated for new API structure
 
 // Core API client
 export { apiClient, ApiClient } from "./api";
 
 // Individual services
 export { authService } from "./auth";
-export { ticketService } from "./tickets";
+export { timesheetService, timerService } from "./timesheets"; // NEW: timesheets service, timer for backward compatibility
 export { customerService } from "./customers";
+export { projectService } from "./projects";
 export { userService } from "./users";
 export { dailyLoginService } from "./dailyLogin";
+export { organizationService } from "./organizations";
+export { processService } from "./processes";
+
+// Import services for the combined object
+import { authService } from "./auth";
+import { timesheetService } from "./timesheets";
+import { customerService } from "./customers";
+import { projectService } from "./projects";
+import { userService } from "./users";
+import { dailyLoginService } from "./dailyLogin";
+import { organizationService } from "./organizations";
+import { processService } from "./processes";
 
 // Combined services object for convenience
 export const services = {
   auth: authService,
-  tickets: ticketService,
+  timesheets: timesheetService, // NEW: primary timesheet service
+  timer: timesheetService, // Backward compatibility
   customers: customerService,
+  projects: projectService,
   users: userService,
   dailyLogin: dailyLoginService,
+  organizations: organizationService,
+  processes: processService,
 };
 
 // Helper function to handle common API errors

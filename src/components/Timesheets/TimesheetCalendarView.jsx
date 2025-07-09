@@ -13,6 +13,7 @@ import {
   Square,
   ChevronDown,
   ChevronUp,
+  Lock,
 } from "lucide-react";
 import { Button } from "../common/Button";
 
@@ -83,13 +84,21 @@ export const TimesheetCalendarView = ({
     };
   }, [currentDate]);
 
+  // Helper function to get local date string
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Group time entries by date
   const entriesByDate = useMemo(() => {
     const grouped = {};
 
     timeEntries.forEach((entry) => {
       const entryDate = new Date(entry.startTime || entry.date);
-      const dateKey = entryDate.toISOString().split("T")[0];
+      const dateKey = getLocalDateString(entryDate);
 
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -115,7 +124,7 @@ export const TimesheetCalendarView = ({
 
   // Get entries for a specific date
   const getEntriesForDate = (date) => {
-    const dateKey = date.toISOString().split("T")[0];
+    const dateKey = getLocalDateString(date);
     return entriesByDate[dateKey] || [];
   };
 
@@ -147,6 +156,15 @@ export const TimesheetCalendarView = ({
     return date.getMonth() === calendarData.month;
   };
 
+  // Check if date is in the future
+  const isFutureDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    return targetDate > today;
+  };
+
   // Format time duration
   const formatDuration = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -170,8 +188,62 @@ export const TimesheetCalendarView = ({
     return activity ? activity.name : "Unknown Activity";
   };
 
-  // Handle date click - Switch to day view
+  // Get customer name by ID
+  const getCustomerName = (customerId) => {
+    const customer = customers.find((c) => (c.id || c._id) === customerId);
+    return customer ? customer.name : "Unknown Customer";
+  };
+
+  // Get the display name for an entry based on its type
+  const getEntryDisplayName = (entry) => {
+    if (entry.entryType === "customer_based" && entry.workProjectId) {
+      const project = projects.find(
+        (p) => (p.id || p._id) === entry.workProjectId
+      );
+      if (project) {
+        const customer = customers.find(
+          (c) => (c.id || c._id) === project.customerId
+        );
+        return `${customer?.name || "Unknown Customer"} - ${project.name}`;
+      }
+      return getProjectName(entry.workProjectId);
+    } else if (entry.entryType === "process_based" && entry.activityId) {
+      const activity = activities.find(
+        (a) => (a.id || a._id) === entry.activityId
+      );
+      if (activity) {
+        // Get the process name from the activity
+        const process = activity.process || activity.Process;
+        return `${process?.name || "Unknown Process"} - ${activity.name}`;
+      }
+      return getActivityName(entry.activityId);
+    }
+
+    // Fallback for entries without entryType (legacy)
+    if (entry.workProjectId) {
+      return getProjectName(entry.workProjectId);
+    } else if (entry.activityId) {
+      return getActivityName(entry.activityId);
+    }
+
+    return "Unknown Entry";
+  };
+
+  // Get the secondary display info for an entry
+  const getEntrySecondaryInfo = (entry) => {
+    if (entry.entryType === "customer_based") {
+      return "Customer Project";
+    } else if (entry.entryType === "process_based") {
+      return "Process Activity";
+    }
+    return null;
+  };
+
+  // Handle date click - Switch to day view (only for non-future dates)
   const handleDateClick = (date) => {
+    if (isFutureDate(date)) {
+      return; // Don't allow clicking on future dates
+    }
     setSelectedDayDate(date);
     setViewMode("day");
     setExpandedDay(null); // Clear any expansion state
@@ -215,19 +287,13 @@ export const TimesheetCalendarView = ({
 
     for (let i = 0; i < count; i++) {
       dots.push(
-        <div
-          key={i}
-          className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"
-        />
+        <div key={i} className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
       );
     }
 
     if (entries.length > maxDots) {
       dots.push(
-        <div
-          key="more"
-          className="text-xs text-slate-600 dark:text-slate-400 font-medium"
-        >
+        <div key="more" className="text-xs text-gray-600 font-medium">
           +{entries.length - maxDots}
         </div>
       );
@@ -236,11 +302,18 @@ export const TimesheetCalendarView = ({
     return dots;
   };
 
-  // Handle adding new entry
-  const handleAddEntry = (date) => {
+  // Handle adding new entry (only for non-future dates)
+  const handleAddEntry = (date, hour = 9) => {
+    if (isFutureDate(date)) {
+      return; // Don't allow adding entries for future dates
+    }
+
+    const startTime = new Date(date);
+    startTime.setHours(hour, 0, 0, 0);
+
     onAddEntry({
-      date: date.toISOString().split("T")[0],
-      startTime: date.toISOString().split("T")[0] + "T09:00:00",
+      date: getLocalDateString(date),
+      startTime: startTime.toISOString(),
     });
   };
 
@@ -251,33 +324,55 @@ export const TimesheetCalendarView = ({
     return isExpanded && (index + 1) % 7 === 0;
   };
 
-  // Day view helper functions
-  const generateHourlySlots = () => {
-    const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      slots.push({
-        hour,
-        time: new Date(2000, 0, 1, hour).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        entries: [],
-      });
+  // Day view helper functions - Only show hours with entries
+  const generateSmartHourlySlots = (entries) => {
+    if (!entries || entries.length === 0) {
+      return [];
     }
-    return slots;
+
+    // Get unique hours that actually have entries
+    const hoursWithEntries = new Set();
+    entries.forEach((entry) => {
+      const startTime = new Date(entry.startTime || entry.date);
+      hoursWithEntries.add(startTime.getHours());
+    });
+
+    // Convert to sorted array and create slots only for hours with entries
+    const sortedHours = Array.from(hoursWithEntries).sort((a, b) => a - b);
+
+    return sortedHours.map((hour) => ({
+      hour,
+      time: new Date(2000, 0, 1, hour).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
+      entries: [],
+    }));
   };
 
   const getEntriesForDayGroupedByHour = (date) => {
     const entries = getEntriesForDate(date);
-    const slots = generateHourlySlots();
+    const slots = generateSmartHourlySlots(entries);
 
+    // Group entries by their hour
     entries.forEach((entry) => {
       const startTime = new Date(entry.startTime || entry.date);
       const hour = startTime.getHours();
-      if (slots[hour]) {
-        slots[hour].entries.push(entry);
+      const slot = slots.find((s) => s.hour === hour);
+      if (slot) {
+        // Sort entries within the hour by start time
+        slot.entries.push(entry);
       }
+    });
+
+    // Sort entries within each slot by start time
+    slots.forEach((slot) => {
+      slot.entries.sort((a, b) => {
+        const timeA = new Date(a.startTime || a.date);
+        const timeB = new Date(b.startTime || b.date);
+        return timeA.getTime() - timeB.getTime();
+      });
     });
 
     return slots;
@@ -301,9 +396,9 @@ export const TimesheetCalendarView = ({
     const totalHours = getTotalHoursForDate(selectedDayDate);
 
     return (
-      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {/* Day View Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -316,10 +411,10 @@ export const TimesheetCalendarView = ({
                 <span>Back to Month</span>
               </Button>
               <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                <h2 className="text-lg font-semibold text-gray-900">
                   {formatDayViewDate(selectedDayDate)}
                 </h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-gray-600">
                   {totalEntries.length} entries • {totalHours.toFixed(1)} hours
                   total
                 </p>
@@ -340,142 +435,201 @@ export const TimesheetCalendarView = ({
                 size="sm"
                 onClick={goToNextDay}
                 className="h-8 w-8 p-0"
+                title="Next day"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => handleAddEntry(selectedDayDate)}
-                className="ml-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
-              </Button>
+              {isFutureDate(selectedDayDate) ? (
+                <div className="ml-4 flex items-center space-x-2 px-3 py-1.5 bg-gray-200 rounded-md">
+                  <Lock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600 font-medium">
+                    Future Date - No Entries Allowed
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleAddEntry(selectedDayDate)}
+                  className="ml-4"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entry
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
         {/* Hourly Schedule */}
         <div className="max-h-[600px] overflow-y-auto">
-          <div className="divide-y divide-slate-200 dark:divide-slate-600">
-            {hourlySlots.map((slot) => (
-              <div
-                key={slot.hour}
-                className="flex min-h-[60px] hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-              >
-                {/* Time column */}
-                <div className="w-20 flex-shrink-0 p-4 text-right border-r border-slate-200 dark:border-slate-600">
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    {slot.time}
-                  </span>
-                </div>
+          {hourlySlots.length > 0 ? (
+            <div className="divide-y divide-gray-200">
+              {hourlySlots.map((slot) => (
+                <div
+                  key={slot.hour}
+                  className="flex min-h-[80px] hover:bg-gray-50 transition-colors"
+                >
+                  {/* Time column */}
+                  <div className="w-20 flex-shrink-0 p-4 text-right border-r border-gray-200">
+                    <span className="text-sm font-medium text-gray-600">
+                      {slot.time}
+                    </span>
+                  </div>
 
-                {/* Entries column */}
-                <div className="flex-1 p-4">
-                  {slot.entries.length > 0 ? (
+                  {/* Entries column */}
+                  <div className="flex-1 p-3">
                     <div className="space-y-2">
-                      {slot.entries.map((entry, index) => (
-                        <div
-                          key={index}
-                          className="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-3 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="font-medium text-slate-900 dark:text-slate-100">
-                                  {getProjectName(entry.workProjectId)}
-                                </span>
-                                <span className="text-sm text-slate-500 dark:text-slate-400">
-                                  {getActivityName(entry.activityId)}
-                                </span>
-                              </div>
+                      {slot.entries.map((entry, index) => {
+                        const startTime = new Date(
+                          entry.startTime || entry.date
+                        );
+                        const endTime = entry.endTime
+                          ? new Date(entry.endTime)
+                          : null;
 
-                              <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400">
-                                <span className="flex items-center">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {entry.startTime &&
-                                    new Date(
-                                      entry.startTime
-                                    ).toLocaleTimeString("en-US", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  {entry.endTime && (
-                                    <>
-                                      {" - "}
-                                      {new Date(
-                                        entry.endTime
-                                      ).toLocaleTimeString("en-US", {
+                        return (
+                          <div
+                            key={index}
+                            className="relative bg-blue-50 border-l-4 border-blue-500 rounded-r-lg shadow-sm hover:shadow-md transition-all duration-200 hover:bg-blue-100"
+                          >
+                            <div className="p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <span className="font-medium text-gray-900 text-sm">
+                                      {getEntryDisplayName(entry)}
+                                    </span>
+                                    {getEntrySecondaryInfo(entry) && (
+                                      <span className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded-full">
+                                        {getEntrySecondaryInfo(entry)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center space-x-3 text-xs text-gray-600 mb-1">
+                                    <span className="flex items-center font-mono bg-gray-100 px-2 py-1 rounded">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {startTime.toLocaleTimeString("en-US", {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                       })}
-                                    </>
+                                      {endTime && (
+                                        <>
+                                          {" → "}
+                                          {endTime.toLocaleTimeString("en-US", {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </>
+                                      )}
+                                    </span>
+
+                                    {entry.duration && (
+                                      <span className="flex items-center font-medium text-blue-600">
+                                        <Timer className="h-3 w-3 mr-1" />
+                                        {formatDuration(entry.duration)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {entry.description && (
+                                    <p className="text-xs text-gray-600 line-clamp-2 bg-gray-50 px-2 py-1 rounded italic">
+                                      "{entry.description}"
+                                    </p>
                                   )}
-                                </span>
 
-                                {entry.duration && (
-                                  <span className="flex items-center">
-                                    <Timer className="h-3 w-3 mr-1" />
-                                    {formatDuration(entry.duration)}
-                                  </span>
-                                )}
+                                  {entry.taskName && (
+                                    <p className="text-xs text-gray-700 mt-1 font-medium">
+                                      Task: {entry.taskName}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center space-x-1 ml-3">
+                                  {onStartTimer && !activeTimer && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => onStartTimer(entry)}
+                                      className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      title="Continue this entry"
+                                    >
+                                      <Play className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onEditEntry(entry)}
+                                    className="h-7 w-7 p-0 hover:bg-gray-200"
+                                    title="Edit entry"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onDeleteEntry(entry)}
+                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    title="Delete entry"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
-
-                              {entry.description && (
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
-                                  {entry.description}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex items-center space-x-1 ml-4">
-                              {onStartTimer && !activeTimer && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => onStartTimer(entry)}
-                                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                >
-                                  <Play className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onEditEntry(entry)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onDeleteEntry(entry)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <div
-                      className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 cursor-pointer hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                {isFutureDate(selectedDayDate) ? (
+                  <>
+                    <Lock className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      Future Date
+                    </h3>
+                    <p className="text-slate-600 mb-4">
+                      You cannot add time entries for future dates.
+                      <br />
+                      {formatDayViewDate(selectedDayDate)}
+                    </p>
+                    <div className="flex items-center justify-center space-x-2 px-4 py-2 bg-slate-100 rounded-lg">
+                      <Lock className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm text-slate-600">
+                        Time entries locked
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      No time entries
+                    </h3>
+                    <p className="text-slate-600 mb-4">
+                      No time entries found for{" "}
+                      {formatDayViewDate(selectedDayDate)}
+                    </p>
+                    <Button
+                      variant="primary"
                       onClick={() => handleAddEntry(selectedDayDate)}
                     >
-                      <div className="text-center">
-                        <Plus className="h-5 w-5 mx-auto mb-1 opacity-50" />
-                        <span className="text-sm">Add entry</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Your First Entry
+                    </Button>
+                  </>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -486,12 +640,12 @@ export const TimesheetCalendarView = ({
       {viewMode === "day" ? (
         renderDayView()
       ) : (
-        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
           {/* Calendar Header */}
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700">
+          <div className="px-6 py-4 border-b border-slate-200 bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                <h2 className="text-lg font-semibold text-gray-900">
                   {MONTHS[calendarData.month]} {calendarData.year}
                 </h2>
                 <div className="flex items-center space-x-1">
@@ -529,7 +683,7 @@ export const TimesheetCalendarView = ({
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="p-3 text-center text-sm font-medium text-slate-500 dark:text-slate-400"
+                  className="p-3 text-center text-sm font-medium text-gray-500"
                 >
                   {day}
                 </div>
@@ -547,27 +701,26 @@ export const TimesheetCalendarView = ({
                 const isTodayDate = isToday(date);
                 const isInCurrentMonth = isCurrentMonth(date);
                 const isExpanded = isDayExpanded(date);
+                const isFuture = isFutureDate(date);
 
                 return (
                   <React.Fragment key={index}>
                     <div
                       className={`
-                    relative min-h-[120px] p-2 border border-slate-200 dark:border-slate-600 
-                    cursor-pointer transition-all duration-200 group
+                    relative min-h-[120px] p-2 border border-slate-200 
+                    transition-all duration-200 group
                     ${
-                      isExpanded
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 ring-2 ring-blue-500/20"
-                        : "bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600"
+                      isFuture
+                        ? "bg-slate-100 opacity-50 cursor-not-allowed"
+                        : isExpanded
+                        ? "bg-blue-50 border-blue-300 ring-2 ring-blue-500/20 cursor-pointer"
+                        : "bg-slate-50 hover:bg-slate-100 cursor-pointer"
                     }
                     ${!isInCurrentMonth ? "opacity-40" : ""}
-                    ${
-                      isTodayDate
-                        ? "ring-2 ring-blue-500 dark:ring-blue-400"
-                        : ""
-                    }
+                    ${isTodayDate ? "ring-2 ring-blue-500" : ""}
                   `}
                       onClick={() => handleDateClick(date)}
-                      onMouseEnter={() => setHoveredDate(date)}
+                      onMouseEnter={() => !isFuture && setHoveredDate(date)}
                       onMouseLeave={() => setHoveredDate(null)}
                     >
                       {/* Date number */}
@@ -577,10 +730,12 @@ export const TimesheetCalendarView = ({
                       text-sm font-medium
                       ${
                         isTodayDate
-                          ? "text-blue-600 dark:text-blue-400 font-bold"
+                          ? "text-blue-600 font-bold"
                           : isInCurrentMonth
-                          ? "text-slate-900 dark:text-slate-100"
-                          : "text-slate-400 dark:text-slate-500"
+                          ? isFuture
+                            ? "text-gray-400"
+                            : "text-gray-900"
+                          : "text-gray-400"
                       }
                     `}
                         >
@@ -599,8 +754,9 @@ export const TimesheetCalendarView = ({
                             </div>
                           )}
 
-                          {/* Add entry button (visible on hover) */}
+                          {/* Add entry button (visible on hover for non-future dates) */}
                           {isInCurrentMonth &&
+                            !isFuture &&
                             (hoveredDate === date || isSelected) && (
                               <Button
                                 variant="ghost"
@@ -614,6 +770,13 @@ export const TimesheetCalendarView = ({
                                 <Plus className="h-3 w-3" />
                               </Button>
                             )}
+
+                          {/* Future date indicator */}
+                          {isFuture && isInCurrentMonth && (
+                            <div className="text-xs text-slate-400 dark:text-slate-500">
+                              🔒
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -650,9 +813,9 @@ export const TimesheetCalendarView = ({
                           {entries.slice(0, 2).map((entry, entryIndex) => (
                             <div
                               key={entryIndex}
-                              className="text-xs p-1 rounded border-l-2 bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300 border-blue-400 dark:border-blue-500 truncate"
+                              className="text-xs p-1 rounded border-l-2 bg-slate-100 text-slate-700 border-blue-400 truncate"
                             >
-                              {getProjectName(entry.workProjectId)}
+                              {getEntryDisplayName(entry)}
                               {entry.duration && (
                                 <span className="text-xs opacity-75 ml-1">
                                   {formatDuration(entry.duration)}
@@ -663,7 +826,7 @@ export const TimesheetCalendarView = ({
 
                           {/* Show "+X more" if there are more entries */}
                           {entries.length > 2 && (
-                            <div className="text-xs text-slate-500 dark:text-slate-400 text-center py-1">
+                            <div className="text-xs text-gray-500 text-center py-1">
                               +{entries.length - 2} more
                             </div>
                           )}
@@ -680,9 +843,9 @@ export const TimesheetCalendarView = ({
 
                     {/* Inline expanded view - Google Calendar style */}
                     {shouldShowExpansion(date, index) && (
-                      <div className="col-span-7 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 mx-1 mb-2 animate-in slide-in-from-top-2 duration-200">
+                      <div className="col-span-7 bg-gray-50 border border-slate-200 rounded-lg p-4 mx-1 mb-2 animate-in slide-in-from-top-2 duration-200">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium text-slate-900 dark:text-slate-100">
+                          <h4 className="font-medium text-gray-900">
                             {date.toLocaleDateString("en-US", {
                               weekday: "long",
                               month: "long",
@@ -695,9 +858,10 @@ export const TimesheetCalendarView = ({
                               variant="primary"
                               size="sm"
                               onClick={() => handleAddEntry(date)}
+                              disabled={isFuture}
                             >
                               <Plus className="h-4 w-4 mr-1" />
-                              Add Entry
+                              {isFuture ? "Future Date" : "Add Entry"}
                             </Button>
                             <Button
                               variant="ghost"
@@ -718,21 +882,21 @@ export const TimesheetCalendarView = ({
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center space-x-2 mb-1">
-                                  <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                                    {getProjectName(entry.workProjectId)}
+                                  <span className="font-medium text-gray-900 truncate">
+                                    {getEntryDisplayName(entry)}
                                   </span>
-                                  {entry.activityId && (
-                                    <span className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                      • {getActivityName(entry.activityId)}
+                                  {getEntrySecondaryInfo(entry) && (
+                                    <span className="text-sm text-gray-500 truncate">
+                                      • {getEntrySecondaryInfo(entry)}
                                     </span>
                                   )}
                                 </div>
                                 {entry.taskName && (
-                                  <div className="text-sm text-slate-600 dark:text-slate-400 truncate mb-1">
+                                  <div className="text-sm text-gray-600 truncate mb-1">
                                     {entry.taskName}
                                   </div>
                                 )}
-                                <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
+                                <div className="flex items-center space-x-4 text-xs text-gray-500">
                                   <span className="flex items-center">
                                     <Clock className="h-3 w-3 mr-1" />
                                     {new Date(
@@ -775,7 +939,7 @@ export const TimesheetCalendarView = ({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onDeleteEntry(entry)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -784,7 +948,7 @@ export const TimesheetCalendarView = ({
                           ))}
 
                           {entries.length === 0 && (
-                            <div className="text-center py-4 text-slate-500 dark:text-slate-400">
+                            <div className="text-center py-4 text-gray-500">
                               <CalendarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               <p>No time entries for this date</p>
                             </div>
@@ -800,7 +964,7 @@ export const TimesheetCalendarView = ({
 
           {/* Loading overlay */}
           {loading && (
-            <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 bg-opacity-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           )}

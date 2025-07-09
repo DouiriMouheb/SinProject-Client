@@ -4,7 +4,6 @@ import {
   Plus,
   RefreshCw,
   AlertCircle,
-  Filter,
   Calendar,
   List,
   ChevronLeft,
@@ -15,35 +14,33 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../common/Button";
 import { ConfirmationModal } from "../common/ConfirmationModal";
-import { TimerWidget } from "./TimerWidget";
-import { TimeSheetTable } from "./TimeSheetTable";
-import { TimeSheetFilters } from "./TimeSheetFilters";
-import { TimeSheetModal } from "./TimeSheetModal";
-import { TimerStartModal } from "./TimerStartModal";
+import { EnhancedTimeSheetTable } from "./EnhancedTimesheetTable";
+import { NewTimeEntryModal } from "./NewTimeEntryModal";
 import { TimesheetCalendarView } from "./TimesheetCalendarView";
-import { timerService } from "../../services/timer";
+import { timesheetService } from "../../services/timesheets";
+import { processService } from "../../services/processes";
+import { organizationService } from "../../services/organizations";
+import { customerService } from "../../services/customers";
 import { showToast } from "../../utils/toast";
 
 export const TimeSheetList = () => {
   const [timeEntries, setTimeEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTimer, setActiveTimer] = useState(null);
 
   // Modal states
-  const [showFilters, setShowFilters] = useState(false);
   const [showTimeEntryModal, setShowTimeEntryModal] = useState(false);
-  const [showTimerStartModal, setShowTimerStartModal] = useState(false);
   const [selectedTimeEntry, setSelectedTimeEntry] = useState(null);
   const [modalMode, setModalMode] = useState("create");
 
   // View states
-  const [viewMode, setViewMode] = useState("list"); // "list", "calendar", "daily", "weekly", "monthly"
+  const [viewMode, setViewMode] = useState("list"); // "list", "calendar"
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Data for dropdowns
-  const [projects, setProjects] = useState([]);
+  const [processes, setProcesses] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const [customers, setCustomers] = useState([]);
 
   // Delete confirmation
@@ -59,100 +56,120 @@ export const TimeSheetList = () => {
     hasPrev: false,
   });
 
-  const [filters, setFilters] = useState({
-    status: "",
-    startDate: "",
-    endDate: "",
-    workProjectId: "",
-    activityId: "",
-    customerId: "",
-    minDuration: "",
-    maxDuration: "",
-    page: 1,
-    limit: 20,
-    sortBy: "startTime",
-    sortOrder: "desc",
-    search: "",
-  });
-
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
 
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    // Only load data if user is authenticated and auth is initialized
+    if (isInitialized && user) {
+      loadInitialData();
+    }
+  }, [isInitialized, user]);
 
   useEffect(() => {
-    loadTimeEntries();
-  }, [filters, currentDate, viewMode]);
+    // Only load time entries if user is authenticated
+    if (isInitialized && user) {
+      loadTimeEntries();
+    }
+  }, [currentDate, viewMode, isInitialized, user]);
 
   const loadInitialData = async () => {
     try {
-      await Promise.all([loadActiveTimer(), loadProjects(), loadActivities()]);
+      // Load all data in parallel (processes will also load activities)
+      await Promise.all([
+        loadOrganizations(),
+        loadProcesses(), // This now also loads activities
+        loadCustomers(),
+      ]);
     } catch (error) {
       console.error("Error loading initial data:", error);
     }
   };
 
-  const loadActiveTimer = async () => {
+  const loadOrganizations = async () => {
     try {
-      const response = await timerService.getActiveTimer();
+      const response = await organizationService.getUserOrganizations();
       if (response.success) {
-        setActiveTimer(response.data.activeTimer);
+        setOrganizations(response.data || []);
+      } else {
+        console.error("Failed to load organizations:", response);
+        showToast.error("Failed to load organizations");
       }
     } catch (error) {
-      // Don't show error for no active timer
-      console.log("No active timer:", error);
+      console.error("Error loading organizations:", error);
+      showToast.error(`Error loading organizations: ${error.message}`);
     }
   };
 
-  const loadProjects = async () => {
+  const loadProcesses = async () => {
     try {
-      const response = await timerService.getWorkProjects();
+      const response = await processService.getProcesses();
       if (response.success) {
-        setProjects(response.data.projects || []);
+        const processesData = response.data?.processes || response.data || [];
+        setProcesses(processesData);
 
-        // Extract unique customers
-        const uniqueCustomers =
-          response.data.projects?.reduce((acc, project) => {
-            if (
-              project.customer &&
-              !acc.find((c) => c.id === project.customer.id)
-            ) {
-              acc.push(project.customer);
-            }
-            return acc;
-          }, []) || [];
-        setCustomers(uniqueCustomers);
+        // Extract activities from the loaded processes
+        const allActivities = [];
+        processesData.forEach((process) => {
+          if (process.activities && Array.isArray(process.activities)) {
+            process.activities.forEach((activity) => {
+              allActivities.push({
+                ...activity,
+                processId: process.id,
+                processName: process.name,
+              });
+            });
+          }
+        });
+        setActivities(allActivities);
       } else {
-        console.error("Failed to load projects:", response);
-        showToast.error("Failed to load projects");
+        console.error("Failed to load processes:", response);
+        showToast.error("Failed to load processes");
       }
     } catch (error) {
-      console.error("Error loading projects:", error);
-      showToast.error(`Error loading projects: ${error.message}`);
+      console.error("Error loading processes:", error);
+      showToast.error(`Error loading processes: ${error.message}`);
     }
   };
 
   const loadActivities = async () => {
     try {
-      const response = await timerService.getProjectsAndActivities();
-      if (response.success) {
-        // Extract all activities from processes
-        const allActivities =
-          response.data.processes?.reduce((acc, process) => {
-            if (process.activities) {
-              acc.push(...process.activities);
-            }
-            return acc;
-          }, []) || [];
+      // Get activities from the processes we already loaded instead of making separate API calls
+      if (processes.length > 0) {
+        const allActivities = [];
+        processes.forEach((process) => {
+          if (process.activities && Array.isArray(process.activities)) {
+            process.activities.forEach((activity) => {
+              allActivities.push({
+                ...activity,
+                processId: process.id,
+                processName: process.name,
+              });
+            });
+          }
+        });
         setActivities(allActivities);
       } else {
-        console.error("Failed to load activities:", response);
-        showToast.error("Failed to load activities");
+        // If no processes loaded yet, just set empty array
+        setActivities([]);
       }
     } catch (error) {
       console.error("Error loading activities:", error);
       showToast.error(`Error loading activities: ${error.message}`);
+    }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const response = await customerService.getCustomers();
+      if (response.success) {
+        setCustomers(response.data || []);
+      } else {
+        console.error("Failed to load customers:", response);
+        showToast.error("Failed to load customers");
+      }
+    } catch (error) {
+      console.error("Error loading customers:", error);
+      showToast.error(`Error loading customers: ${error.message}`);
     }
   };
 
@@ -161,25 +178,26 @@ export const TimeSheetList = () => {
       setLoading(true);
       setError(null);
 
-      // Prepare filters with date range based on view mode
-      const queryFilters = { ...filters };
-
-      if (viewMode !== "list") {
+      // For calendar view, get entries for the current month
+      let queryParams = {};
+      if (viewMode === "calendar") {
         const dateRange = getDateRangeForView();
-        queryFilters.startDate = dateRange.start;
-        queryFilters.endDate = dateRange.end;
+        queryParams.startDate = dateRange.start;
+        queryParams.endDate = dateRange.end;
       }
 
-      // Filter out empty values
-      const cleanFilters = Object.fromEntries(
-        Object.entries(queryFilters).filter(([_, value]) => value !== "")
-      );
-
-      const response = await timerService.getTimeEntries(cleanFilters);
+      const response = await timesheetService.getTimeEntries(queryParams);
 
       if (response.success) {
-        setTimeEntries(response.data.timeEntries || []);
-        setPagination(response.data.pagination || {});
+        setTimeEntries(response.data || []);
+        // TODO: Add pagination support if needed
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalEntries: response.data?.length || 0,
+          hasNext: false,
+          hasPrev: false,
+        });
       }
     } catch (err) {
       console.error("Error loading time entries:", err);
@@ -225,88 +243,26 @@ export const TimeSheetList = () => {
     }
   };
 
-  const navigateDate = (direction) => {
-    const newDate = new Date(currentDate);
-
-    switch (viewMode) {
-      case "daily":
-        newDate.setDate(
-          currentDate.getDate() + (direction === "next" ? 1 : -1)
-        );
-        break;
-      case "weekly":
-        newDate.setDate(
-          currentDate.getDate() + (direction === "next" ? 7 : -7)
-        );
-        break;
-      case "monthly":
-        newDate.setMonth(
-          currentDate.getMonth() + (direction === "next" ? 1 : -1)
-        );
-        break;
-    }
-
-    setCurrentDate(newDate);
-  };
-
-  const getViewTitle = () => {
-    const date = new Date(currentDate);
-
-    switch (viewMode) {
-      case "daily":
-        return date.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-      case "weekly":
-        const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return `${startOfWeek.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })} - ${endOfWeek.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}`;
-      case "monthly":
-        return date.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-        });
-      default:
-        return "All Time Entries";
-    }
-  };
-
-  const handleTimerUpdate = () => {
-    loadActiveTimer();
-    loadTimeEntries();
-  };
-
   const openTimeEntryModal = (mode, entry = null, dateInfo = null) => {
     setModalMode(mode);
 
     let defaultEntry = {
-      taskName: "",
-      description: "",
-      workProjectId: "",
+      organizationId: "",
+      customerId: "",
+      processId: "",
       activityId: "",
-      date: new Date().toISOString().split("T")[0],
+      workLocation: "",
+      notes: "",
       startTime: "",
       endTime: "",
+      totalHours: 0,
     };
 
     // If dateInfo is provided (from calendar), use it
     if (dateInfo) {
       defaultEntry = {
         ...defaultEntry,
-        date: dateInfo.date,
-        startTime: dateInfo.startTime,
+        startTime: dateInfo.startTime || "",
       };
     }
 
@@ -329,16 +285,16 @@ export const TimeSheetList = () => {
       setError(null);
 
       if (modalMode === "create") {
-        const response = await timerService.createManualEntry(entryData);
+        const response = await timesheetService.createTimeEntry(entryData);
         if (response.success) {
-          setTimeEntries((prev) => [response.data.timeEntry, ...prev]);
+          setTimeEntries((prev) => [response.data, ...prev]);
           showToast.dismiss(loadingToastId);
           showToast.success("Time entry created successfully");
           setShowTimeEntryModal(false);
           loadTimeEntries();
         }
       } else if (modalMode === "edit") {
-        const response = await timerService.updateTimeEntry(
+        const response = await timesheetService.updateTimeEntry(
           selectedTimeEntry.id || selectedTimeEntry._id,
           entryData
         );
@@ -347,7 +303,7 @@ export const TimeSheetList = () => {
             prev.map((entry) =>
               (entry.id || entry._id) ===
               (selectedTimeEntry.id || selectedTimeEntry._id)
-                ? response.data.timeEntry
+                ? response.data
                 : entry
             )
           );
@@ -359,24 +315,7 @@ export const TimeSheetList = () => {
     } catch (err) {
       console.error("Error saving time entry:", err);
       showToast.dismiss(loadingToastId);
-    }
-  };
-
-  const handleTimerStart = async (timerData) => {
-    const loadingToastId = showToast.loading("Starting timer...");
-
-    try {
-      const response = await timerService.startTimer(timerData);
-      if (response.success) {
-        setActiveTimer(response.data.timeEntry);
-        showToast.dismiss(loadingToastId);
-        showToast.success("Timer started successfully");
-        setShowTimerStartModal(false);
-        loadTimeEntries();
-      }
-    } catch (err) {
-      console.error("Error starting timer:", err);
-      showToast.dismiss(loadingToastId);
+      showToast.error("Failed to save time entry. Please try again.");
     }
   };
 
@@ -395,7 +334,7 @@ export const TimeSheetList = () => {
 
     try {
       const entryId = entryToDelete.id || entryToDelete._id;
-      await timerService.deleteTimeEntry(entryId);
+      await timesheetService.deleteTimeEntry(entryId);
 
       setTimeEntries((prev) =>
         prev.filter((entry) => (entry.id || entry._id) !== entryId)
@@ -407,6 +346,7 @@ export const TimeSheetList = () => {
       loadTimeEntries();
     } catch (err) {
       console.error("Error deleting time entry:", err);
+      showToast.error("Failed to delete time entry");
     } finally {
       setIsDeleting(false);
     }
@@ -419,22 +359,7 @@ export const TimeSheetList = () => {
     }
   };
 
-  const handleFilterChange = (newFilters) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters,
-      page: 1,
-    }));
-  };
-
-  const handlePageChange = (newPage) => {
-    setFilters((prev) => ({
-      ...prev,
-      page: newPage,
-    }));
-  };
-
-  if (loading && timeEntries.length === 0 && !activeTimer) {
+  if (loading && timeEntries.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -448,22 +373,13 @@ export const TimeSheetList = () => {
   return (
     <>
       <div>
-        {/* Timer Widget */}
-        <TimerWidget
-          activeTimer={activeTimer}
-          onTimerUpdate={handleTimerUpdate}
-          onRefresh={loadActiveTimer}
-        />
-
         {/* Header */}
         <div className="mb-6">
           {/* Title Section */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Timesheet
-              </h1>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              <h1 className="text-3xl font-bold text-gray-900">Timesheet</h1>
+              <p className="mt-2 text-sm text-gray-600">
                 Track your time and manage entries
               </p>
             </div>
@@ -472,13 +388,13 @@ export const TimeSheetList = () => {
           {/* Controls Section */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
             {/* View Mode Selector */}
-            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1 w-fit">
+            <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "list"
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -487,54 +403,16 @@ export const TimeSheetList = () => {
                 onClick={() => setViewMode("calendar")}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "calendar"
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 <Calendar className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("daily")}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === "daily"
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                onClick={() => setViewMode("weekly")}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === "weekly"
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => setViewMode("monthly")}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === "monthly"
-                    ? "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                Monthly
               </button>
             </div>
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 lg:flex lg:items-center gap-2 lg:space-x-2">
-              <Button
-                onClick={() => setShowFilters(!showFilters)}
-                variant="secondary"
-                className="w-full "
-              >
-                <Filter className="h-4 w-4" />
-              </Button>
-
               <Button
                 onClick={loadTimeEntries}
                 variant="secondary"
@@ -551,48 +429,11 @@ export const TimeSheetList = () => {
                 className="w-full lg:w-auto"
               >
                 <Plus className="h-4 w-4" />
+                New Entry
               </Button>
-
-              {!activeTimer && (
-                <Button
-                  onClick={openTimerStartModal}
-                  variant="primary"
-                  className="w-full lg:w-auto"
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-              )}
             </div>
           </div>
         </div>
-
-        {/* Date Navigation for Calendar Views */}
-        {viewMode !== "list" && (
-          <div className="flex items-center justify-between mb-6 bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-            <Button
-              onClick={() => navigateDate("prev")}
-              variant="ghost"
-              size="sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center space-x-3">
-              <Calendar className="h-5 w-5 text-slate-400 dark:text-slate-500" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {getViewTitle()}
-              </h2>
-            </div>
-
-            <Button
-              onClick={() => navigateDate("next")}
-              variant="ghost"
-              size="sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
 
         {/* Error Display */}
         {error && (
@@ -612,17 +453,6 @@ export const TimeSheetList = () => {
           </div>
         )}
 
-        {/* Filters */}
-        {showFilters && (
-          <TimeSheetFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            projects={projects}
-            activities={activities}
-            customers={customers}
-          />
-        )}
-
         {/* Time Entries View */}
         {viewMode === "calendar" ? (
           <TimesheetCalendarView
@@ -634,85 +464,36 @@ export const TimeSheetList = () => {
             }
             onEditEntry={(entry) => openTimeEntryModal("edit", entry)}
             onDeleteEntry={handleDeleteRequest}
-            onStartTimer={openTimerStartModal}
-            activeTimer={activeTimer}
-            projects={projects}
+            processes={processes}
             activities={activities}
+            organizations={organizations}
             customers={customers}
             loading={loading}
           />
         ) : (
-          <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-            <TimeSheetTable
-              timeEntries={timeEntries}
-              onEdit={(entry) => openTimeEntryModal("edit", entry)}
-              onDelete={handleDeleteRequest}
-              canEdit={() => true}
-              canDelete={() => true}
-              loading={loading}
-            />
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && viewMode === "list" && (
-              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Showing{" "}
-                  {Math.min(
-                    (pagination.currentPage - 1) * filters.limit + 1,
-                    pagination.totalEntries
-                  )}{" "}
-                  to{" "}
-                  {Math.min(
-                    pagination.currentPage * filters.limit,
-                    pagination.totalEntries
-                  )}{" "}
-                  of {pagination.totalEntries} entries
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                  >
-                    Previous
-                  </Button>
-                  <span className="px-3 py-1 text-sm text-slate-700 dark:text-slate-300">
-                    Page {pagination.currentPage} of {pagination.totalPages}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+          <EnhancedTimeSheetTable
+            timeEntries={timeEntries}
+            onEdit={(entry) => openTimeEntryModal("edit", entry)}
+            onDelete={handleDeleteRequest}
+            processes={processes}
+            activities={activities}
+            organizations={organizations}
+            customers={customers}
+            loading={loading}
+          />
         )}
 
         {/* Time Entry Modal */}
-        <TimeSheetModal
+        <NewTimeEntryModal
           isOpen={showTimeEntryModal}
           onClose={() => setShowTimeEntryModal(false)}
           timeEntry={selectedTimeEntry}
-          onChange={setSelectedTimeEntry}
           onSave={handleTimeEntrySave}
           mode={modalMode}
-          projects={projects}
+          processes={processes}
           activities={activities}
-        />
-
-        {/* Timer Start Modal */}
-        <TimerStartModal
-          isOpen={showTimerStartModal}
-          onClose={() => setShowTimerStartModal(false)}
-          onStart={handleTimerStart}
-          projects={projects}
-          activities={activities}
+          organizations={organizations}
+          customers={customers}
         />
 
         {/* Delete Confirmation Modal */}
@@ -726,7 +507,7 @@ export const TimeSheetList = () => {
           cancelText="Cancel"
           type="delete"
           isLoading={isDeleting}
-          itemName={entryToDelete ? entryToDelete.taskName : null}
+          itemName={entryToDelete ? "Time Entry" : null}
         />
       </div>
     </>

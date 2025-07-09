@@ -1,4 +1,4 @@
-// src/contexts/ThemeContext.jsx - Theme context with dark mode as default
+// src/contexts/ThemeContext.jsx - Theme context with light mode as default
 import React, { createContext, useContext, useEffect } from "react";
 
 const ThemeContext = createContext();
@@ -12,15 +12,15 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Always use dark mode
+  // Always use light mode
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.add("dark");
+    root.classList.remove("dark");
   }, []);
 
   const value = {
-    isDarkMode: true,
-    theme: "dark",
+    isDarkMode: false,
+    theme: "light",
   };
 
   return (

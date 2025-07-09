@@ -18,39 +18,25 @@ import { ProfilePicture } from "../common/ProfilePicture";
 
 const getRoleColor = (role) => {
   const colors = {
-    admin:
-      "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700",
-    manager:
-      "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700",
-    user: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700",
+    admin: "bg-red-100 text-red-800 border-red-200",
+    manager: "bg-blue-100 text-blue-800 border-blue-200",
+    user: "bg-green-100 text-green-800 border-green-200",
   };
-  return (
-    colors[role] ||
-    "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-600"
-  );
+  return colors[role] || "bg-gray-100 text-gray-800 border-gray-200";
 };
 
 const getDepartmentColor = (department) => {
   const colors = {
-    IT: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300",
-    HR: "bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300",
-    Finance:
-      "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300",
-    Operations:
-      "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300",
-    Marketing:
-      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300",
-    Sales:
-      "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300",
-    Legal:
-      "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300",
-    Executive:
-      "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300",
+    IT: "bg-purple-100 text-purple-800",
+    HR: "bg-pink-100 text-pink-800",
+    Finance: "bg-yellow-100 text-yellow-800",
+    Operations: "bg-blue-100 text-blue-800",
+    Marketing: "bg-green-100 text-green-800",
+    Sales: "bg-orange-100 text-orange-800",
+    Legal: "bg-indigo-100 text-indigo-800",
+    Executive: "bg-gray-100 text-gray-800",
   };
-  return (
-    colors[department] ||
-    "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300"
-  );
+  return colors[department] || "bg-gray-100 text-gray-800";
 };
 
 const formatDate = (dateString) => {
@@ -114,12 +100,10 @@ export const UserTable = ({
 
   if (loading && users.length === 0) {
     return (
-      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-8 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white shadow-lg rounded-lg p-8 border border-gray-200">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-slate-600 dark:text-slate-400">
-            Loading users...
-          </span>
+          <span className="ml-3 text-gray-600">Loading users...</span>
         </div>
       </div>
     );
@@ -127,13 +111,13 @@ export const UserTable = ({
 
   if (users.length === 0) {
     return (
-      <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg p-8 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white shadow-lg rounded-lg p-8 border border-gray-200">
         <div className="text-center">
-          <Building2 className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
-          <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
             No users found
           </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-gray-500">
             Try adjusting your filters or create a new user
           </p>
         </div>
@@ -142,32 +126,32 @@ export const UserTable = ({
   }
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-800 shadow-lg rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+    <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-          <thead className="bg-slate-100 dark:bg-slate-700">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 User
               </th>
-              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Role
               </th>
-              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Department
               </th>
-              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Login
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-slate-50 dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => {
               const userId = user.id || user._id;
               const isExpanded = expandedUser === userId;
@@ -177,11 +161,9 @@ export const UserTable = ({
               return (
                 <React.Fragment key={userId}>
                   <tr
-                    className={`hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer ${
-                      isExpanded ? "bg-blue-50 dark:bg-blue-900/30" : ""
-                    } ${
-                      isCurrentUser ? "bg-yellow-50 dark:bg-yellow-900/30" : ""
-                    }`}
+                    className={`hover:bg-gray-50 transition-colors cursor-pointer ${
+                      isExpanded ? "bg-blue-50" : ""
+                    } ${isCurrentUser ? "bg-yellow-50" : ""}`}
                     onClick={() => toggleExpanded(userId)}
                   >
                     {/* User Info with ProfilePicture - Enhanced for mobile */}
@@ -198,7 +180,7 @@ export const UserTable = ({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                            <p className="text-sm font-medium text-gray-900 truncate">
                               {user.name}
                               {isCurrentUser && (
                                 <span className="ml-2 text-xs text-blue-600 font-semibold">
@@ -208,8 +190,8 @@ export const UserTable = ({
                             </p>
                           </div>
                           <div className="flex items-center space-x-1 mt-1">
-                            <Mail className="h-3 w-3 text-slate-400 dark:text-slate-500" />
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            <p className="text-xs text-gray-500 truncate">
                               {user.email}
                             </p>
                           </div>
@@ -225,12 +207,12 @@ export const UserTable = ({
                                 {user.role}
                               </span>
                               {user.isActive ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   <UserCheck className="h-3 w-3 mr-1" />
                                   Active
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                   <UserX className="h-3 w-3 mr-1" />
                                   Inactive
                                 </span>
@@ -281,14 +263,14 @@ export const UserTable = ({
                         {user.isActive ? (
                           <>
                             <UserCheck className="h-4 w-4 text-green-500 mr-2" />
-                            <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+                            <span className="text-sm text-green-700 font-medium">
                               Active
                             </span>
                           </>
                         ) : (
                           <>
                             <UserX className="h-4 w-4 text-red-500 mr-2" />
-                            <span className="text-sm text-red-700 dark:text-red-400 font-medium">
+                            <span className="text-sm text-red-700 font-medium">
                               Inactive
                             </span>
                           </>
@@ -298,7 +280,7 @@ export const UserTable = ({
 
                     {/* Last Login - Hidden on mobile */}
                     <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="h-3 w-3 mr-1" />
                         {formatDate(user.lastLogin)}
                       </div>
@@ -313,7 +295,7 @@ export const UserTable = ({
                               e.stopPropagation();
                               onView(user);
                             }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
                             title="View user details"
                           >
                             <Eye className="h-4 w-4" />

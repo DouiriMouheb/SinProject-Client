@@ -1,5 +1,5 @@
 // src/components/Customers/Customers.jsx - Complete customer management
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   RefreshCw,
@@ -55,12 +55,9 @@ export const Customers = () => {
   });
 
   const { user, hasRole } = useAuth();
+  const refreshTimeoutRef = useRef(null);
 
-  useEffect(() => {
-    loadCustomers();
-  }, [filters]);
-
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -100,7 +97,30 @@ export const Customers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Debounced refresh function to avoid too many API calls
+  const debouncedRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    refreshTimeoutRef.current = setTimeout(() => {
+      loadCustomers();
+    }, 500); // 500ms delay
+  }, [loadCustomers]);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const openModal = (mode, customer = null) => {
     setModalMode(mode);
@@ -202,6 +222,7 @@ export const Customers = () => {
           await customerService.deleteCustomer(customerId);
           loadCustomers(); // Refresh the list
         }}
+        onRefresh={debouncedRefresh} // Use debounced refresh callback
       />
     );
   }

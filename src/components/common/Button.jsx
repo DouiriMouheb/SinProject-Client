@@ -13,13 +13,13 @@ export const Button = ({
 
   const variants = {
     primary:
-      "bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-blue-500 shadow-blue-500/25",
+      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-blue-500/25",
     secondary:
-      "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-500 focus:ring-slate-500 border border-slate-300 dark:border-slate-500",
+      "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500 border border-gray-300",
     danger:
-      "bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-600 focus:ring-red-500 shadow-red-500/25",
+      "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-red-500/25",
     ghost:
-      "bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-slate-500 border border-transparent hover:border-slate-200 dark:hover:border-slate-600",
+      "bg-transparent hover:bg-gray-100 text-gray-900 focus:ring-gray-500 border border-transparent hover:border-gray-200",
   };
 
   const sizes = {

@@ -1,10 +1,10 @@
-// src/components/Timesheets/TimeSheetModal.jsx - FIXED version with proper data handling
+// src/components/Timesheets/TimeSheetModal.jsx - Updated version with entry type enforcement
 import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
 import { showToast } from "../../utils/toast";
-import { timerService } from "../../services/timer";
+// import { timerService } from "../../services/timer"; // Legacy - disabled
 import { Calendar, Clock, Briefcase, Activity } from "lucide-react";
 
 export const TimeSheetModal = ({
@@ -19,16 +19,15 @@ export const TimeSheetModal = ({
 }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [filteredActivities, setFilteredActivities] = useState([]);
 
-  // New state for customer/process selection
-  const [selectionType, setSelectionType] = useState(""); // "customer" or "process"
+  // New state for entry type selection
+  const [entryType, setEntryType] = useState(""); // "customer_based" or "process_based"
   const [customers, setCustomers] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [filteredActivities, setFilteredActivities] = useState([]);
 
   const isReadOnly = mode === "view";
   const isCreating = mode === "create";
@@ -41,14 +40,43 @@ export const TimeSheetModal = ({
       view: "View Time Entry",
     }[mode] || "Time Entry";
 
-  // Reset errors and update filtered activities when modal opens/closes or project changes
+  // Reset errors and initialize data when modal opens
   useEffect(() => {
     setErrors({});
     setIsSubmitting(false);
     if (isOpen) {
       loadCustomersAndProcesses();
+      initializeFormData();
     }
   }, [isOpen, mode]);
+
+  // Initialize form data based on existing entry or defaults
+  const initializeFormData = () => {
+    if (timeEntry && timeEntry.entryType) {
+      // Editing an existing entry
+      setEntryType(timeEntry.entryType);
+
+      if (timeEntry.entryType === "customer_based" && timeEntry.workProjectId) {
+        const project = projects.find((p) => p.id === timeEntry.workProjectId);
+        if (project && project.customer) {
+          setSelectedCustomer(project.customer);
+        }
+      } else if (
+        timeEntry.entryType === "process_based" &&
+        timeEntry.activityId
+      ) {
+        const activity = activities.find((a) => a.id === timeEntry.activityId);
+        if (activity && activity.process) {
+          setSelectedProcess(activity.process);
+        }
+      }
+    } else {
+      // New entry - reset everything
+      setEntryType("");
+      setSelectedCustomer(null);
+      setSelectedProcess(null);
+    }
+  };
 
   // Load customers and processes data
   const loadCustomersAndProcesses = async () => {
@@ -75,46 +103,84 @@ export const TimeSheetModal = ({
     }
   };
 
-  useEffect(() => {
-    if (timeEntry?.workProjectId) {
-      const project = projects.find((p) => p.id === timeEntry.workProjectId);
-      setSelectedProject(project);
-    } else {
-      setSelectedProject(null);
-    }
-  }, [timeEntry?.workProjectId, projects]);
-
-  useEffect(() => {
-    // Filter activities based on selection type
-    if (selectionType === "process" && selectedProcess) {
-      setFilteredActivities(selectedProcess.activities || []);
-    } else {
-      setFilteredActivities(activities);
-    }
-  }, [activities, selectedProcess, selectionType]);
-
   // Update filtered projects when customer is selected
   useEffect(() => {
-    if (selectionType === "customer" && selectedCustomer) {
+    if (entryType === "customer_based" && selectedCustomer) {
       const customerProjects = projects.filter(
         (project) =>
           project.customer && project.customer.id === selectedCustomer.id
       );
       setFilteredProjects(customerProjects);
     } else {
-      setFilteredProjects(projects);
+      setFilteredProjects([]);
     }
-  }, [selectedCustomer, projects, selectionType]);
+  }, [selectedCustomer, projects, entryType]);
+
+  // Update filtered activities when process is selected
+  useEffect(() => {
+    if (entryType === "process_based" && selectedProcess) {
+      setFilteredActivities(selectedProcess.activities || []);
+    } else {
+      setFilteredActivities([]);
+    }
+  }, [selectedProcess, entryType]);
 
   const validateForm = () => {
-    // Use the timer service validation
-    const validationErrors = timerService.validateTimeEntryData(timeEntry);
+    const validationErrors = [];
+
+    // Validate entry type
+    if (!entryType) {
+      validationErrors.push("Entry type is required");
+    }
+
+    // Validate based on entry type
+    if (entryType === "customer_based") {
+      if (!timeEntry.workProjectId) {
+        validationErrors.push("Project is required for customer-based entries");
+      }
+      if (timeEntry.activityId) {
+        validationErrors.push("Customer-based entries cannot have an activity");
+      }
+    } else if (entryType === "process_based") {
+      if (!timeEntry.activityId) {
+        validationErrors.push("Activity is required for process-based entries");
+      }
+      if (timeEntry.workProjectId) {
+        validationErrors.push("Process-based entries cannot have a project");
+      }
+    }
+
+    // Validate common fields
+    if (!timeEntry.taskName?.trim()) {
+      validationErrors.push("Task name is required");
+    }
+
+    if (!timeEntry.date) {
+      validationErrors.push("Date is required");
+    }
+
+    if (!timeEntry.startTime) {
+      validationErrors.push("Start time is required");
+    }
+
+    if (!timeEntry.endTime) {
+      validationErrors.push("End time is required");
+    }
+
+    if (timeEntry.startTime && timeEntry.endTime) {
+      const start = new Date(`${timeEntry.date}T${timeEntry.startTime}`);
+      const end = new Date(`${timeEntry.date}T${timeEntry.endTime}`);
+      if (end <= start) {
+        validationErrors.push("End time must be after start time");
+      }
+    }
 
     if (validationErrors.length > 0) {
       const errorObject = {};
-      validationErrors.forEach((error, index) => {
-        // Map validation errors to field names
-        if (error.includes("Work project")) {
+      validationErrors.forEach((error) => {
+        if (error.includes("Entry type")) {
+          errorObject.entryType = error;
+        } else if (error.includes("Project")) {
           errorObject.workProjectId = error;
         } else if (error.includes("Activity")) {
           errorObject.activityId = error;
@@ -122,12 +188,11 @@ export const TimeSheetModal = ({
           errorObject.taskName = error;
         } else if (error.includes("Date")) {
           errorObject.date = error;
-        } else if (error.includes("start time")) {
+        } else if (error.includes("Start time")) {
           errorObject.startTime = error;
-        } else if (error.includes("End time") || error.includes("end time")) {
+        } else if (error.includes("End time")) {
           errorObject.endTime = error;
         } else {
-          // Generic error
           errorObject.general = error;
         }
       });
@@ -153,17 +218,23 @@ export const TimeSheetModal = ({
     setIsSubmitting(true);
 
     try {
-      // Prepare data for submission
+      // Prepare data for submission with proper entry type structure
       const submitData = {
+        entryType: entryType,
         taskName: timeEntry.taskName.trim(),
         description: timeEntry.description?.trim() || "",
-        workProjectId: timeEntry.workProjectId,
-        activityId: timeEntry.activityId,
         date: timeEntry.date,
         startTime: timeEntry.startTime,
         endTime: timeEntry.endTime,
         isManual: true,
       };
+
+      // Add the appropriate ID based on entry type
+      if (entryType === "customer_based") {
+        submitData.workProjectId = timeEntry.workProjectId;
+      } else if (entryType === "process_based") {
+        submitData.activityId = timeEntry.activityId;
+      }
 
       await onSave(submitData);
     } catch (error) {
@@ -189,11 +260,11 @@ export const TimeSheetModal = ({
   };
 
   const handleProjectChange = (projectId) => {
-    // Clear activity when project changes
+    // Update timeEntry with selected project
     onChange({
       ...timeEntry,
       workProjectId: projectId,
-      activityId: "",
+      activityId: "", // Clear activity when project changes
     });
 
     // Clear errors
@@ -202,9 +273,23 @@ export const TimeSheetModal = ({
     }
   };
 
-  // Handle selection type change
-  const handleSelectionTypeChange = (type) => {
-    setSelectionType(type);
+  const handleActivityChange = (activityId) => {
+    // Update timeEntry with selected activity
+    onChange({
+      ...timeEntry,
+      activityId: activityId,
+      workProjectId: "", // Clear project when activity changes
+    });
+
+    // Clear errors
+    if (errors.activityId) {
+      setErrors((prev) => ({ ...prev, activityId: "", workProjectId: "" }));
+    }
+  };
+
+  // Handle entry type change
+  const handleEntryTypeChange = (type) => {
+    setEntryType(type);
     setSelectedCustomer(null);
     setSelectedProcess(null);
 
@@ -218,9 +303,9 @@ export const TimeSheetModal = ({
     // Clear related errors
     setErrors((prev) => ({
       ...prev,
+      entryType: "",
       workProjectId: "",
       activityId: "",
-      selectionType: "",
     }));
   };
 
@@ -229,11 +314,10 @@ export const TimeSheetModal = ({
     const customer = customers.find((c) => c.id === customerId);
     setSelectedCustomer(customer);
 
-    // Clear project and activity selections
+    // Clear project selection
     onChange({
       ...timeEntry,
       workProjectId: "",
-      activityId: "",
     });
   };
 
@@ -346,37 +430,41 @@ export const TimeSheetModal = ({
           </div>
         </div>
 
-        {/* Project and Activity Selection */}
+        {/* Entry Type Selection */}
         <div className="space-y-4">
-          {/* Selection Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Selection Method *
+              Entry Type *
             </label>
             <div className="relative">
               <select
-                value={selectionType}
-                onChange={(e) => handleSelectionTypeChange(e.target.value)}
+                value={entryType}
+                onChange={(e) => handleEntryTypeChange(e.target.value)}
                 disabled={isReadOnly}
                 className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.selectionType ? "border-red-300" : "border-gray-300"
+                  errors.entryType ? "border-red-300" : "border-gray-300"
                 } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
               >
-                <option value="">Choose selection method...</option>
-                <option value="customer">Select by Customer</option>
-                <option value="process">Select by Process</option>
+                <option value="">Choose entry type...</option>
+                <option value="customer_based">Customer Project</option>
+                <option value="process_based">Process Activity</option>
               </select>
               <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
-            {errors.selectionType && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.selectionType}
-              </p>
+            {errors.entryType && (
+              <p className="mt-1 text-sm text-red-600">{errors.entryType}</p>
             )}
+            <p className="mt-1 text-xs text-gray-500">
+              {entryType === "customer_based"
+                ? "Track time for customer projects and deliverables"
+                : entryType === "process_based"
+                ? "Track time for internal processes and activities"
+                : "Select whether this is customer work or internal process work"}
+            </p>
           </div>
 
-          {/* Customer Selection Flow */}
-          {selectionType === "customer" && (
+          {/* Customer-based Selection Flow */}
+          {entryType === "customer_based" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -439,44 +527,11 @@ export const TimeSheetModal = ({
                   )}
                 </div>
               )}
-
-              {selectedCustomer && timeEntry?.workProjectId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Activity *
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={timeEntry?.activityId || ""}
-                      onChange={(e) =>
-                        handleInputChange("activityId", e.target.value)
-                      }
-                      disabled={isReadOnly}
-                      className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.activityId ? "border-red-300" : "border-gray-300"
-                      } ${isReadOnly ? "bg-gray-100" : "bg-white"}`}
-                    >
-                      <option value="">Select an activity...</option>
-                      {filteredActivities.map((activity) => (
-                        <option key={activity.id} value={activity.id}>
-                          {activity.name}
-                        </option>
-                      ))}
-                    </select>
-                    <Activity className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  </div>
-                  {errors.activityId && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.activityId}
-                    </p>
-                  )}
-                </div>
-              )}
             </>
           )}
 
-          {/* Process Selection Flow */}
-          {selectionType === "process" && (
+          {/* Process-based Selection Flow */}
+          {entryType === "process_based" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -515,9 +570,7 @@ export const TimeSheetModal = ({
                   <div className="relative">
                     <select
                       value={timeEntry?.activityId || ""}
-                      onChange={(e) =>
-                        handleInputChange("activityId", e.target.value)
-                      }
+                      onChange={(e) => handleActivityChange(e.target.value)}
                       disabled={isReadOnly}
                       className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                         errors.activityId ? "border-red-300" : "border-gray-300"

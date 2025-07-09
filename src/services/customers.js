@@ -1,8 +1,8 @@
-// src/services/customers.js - Customer management service
+// src/services/customers.js - Customer management service (Updated for new API)
 import { apiClient } from "./api";
 
 export const customerService = {
-  // Get all customers with optional filters
+  // Get all customers with optional filters (admin only)
   async getCustomers(filters = {}) {
     try {
       const params = new URLSearchParams();
@@ -15,9 +15,28 @@ export const customerService = {
       });
 
       const response = await apiClient.get(`/customers?${params.toString()}`);
-      return response;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error) {
       console.error("Error fetching customers:", error);
+      throw error;
+    }
+  },
+
+  // Get customers by organization (NEW - customers are now filtered by organization)
+  async getCustomersByOrganization(organizationId) {
+    try {
+      const response = await apiClient.get(
+        `/organizations/${organizationId}/customers`
+      );
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching customers by organization:", error);
       throw error;
     }
   },
@@ -26,43 +45,57 @@ export const customerService = {
   async getCustomer(customerId) {
     try {
       const response = await apiClient.get(`/customers/${customerId}`);
-      return response;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error) {
       console.error("Error fetching customer:", error);
       throw error;
     }
   },
 
-  // Create new customer
+  // Create new customer (admin only)
   async createCustomer(customerData) {
     try {
+      console.log("Creating customer with data:", customerData);
       const response = await apiClient.post("/customers", customerData);
-      return response;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error) {
       console.error("Error creating customer:", error);
       throw error;
     }
   },
 
-  // Update customer
+  // Update customer (admin only)
   async updateCustomer(customerId, customerData) {
     try {
+      console.log("Updating customer with data:", customerData);
       const response = await apiClient.put(
         `/customers/${customerId}`,
         customerData
       );
-      return response;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error) {
       console.error("Error updating customer:", error);
       throw error;
     }
   },
 
-  // Delete customer
+  // Delete customer (admin only)
   async deleteCustomer(customerId) {
     try {
       const response = await apiClient.delete(`/customers/${customerId}`);
-      return response;
+      return {
+        success: true,
+        data: response.data,
+      };
     } catch (error) {
       console.error("Error deleting customer:", error);
       throw error;

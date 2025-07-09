@@ -34,7 +34,7 @@ export const Layout = ({ children, currentPage, setCurrentPage }) => {
 
   return (
     <>
-      <div className="flex h-screen bg-slate-50 dark:bg-[#0f1419] overflow-hidden">
+      <div className="flex h-screen bg-gray-50 overflow-hidden">
         {/* Sidebar - Hidden on mobile, visible on desktop */}
         {!isMobile && (
           <div
@@ -58,7 +58,7 @@ export const Layout = ({ children, currentPage, setCurrentPage }) => {
           {isMobile && <MobileHeader onOpenProfile={handleOpenProfile} />}
 
           <main className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto bg-slate-100 dark:bg-[#162032] p-4 md:p-6 pb-20 md:pb-6">
+            <div className="h-full overflow-y-auto bg-white p-4 md:p-6 pb-20 md:pb-6">
               {children}
             </div>
           </main>
