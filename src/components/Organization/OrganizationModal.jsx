@@ -84,19 +84,30 @@ export const OrganizationModal = ({
         console.log("Organization updated:", result);
       }
 
-      // Make sure we have a valid organization object with a name property
-      if (!result || typeof result !== "object") {
-        result = { ...formData, id: Date.now() }; // Fallback object if API response is invalid
-        console.warn("Invalid response from API, using fallback:", result);
+      // Extract the actual organization data from the API response
+      let organizationData = null;
+
+      if (result && result.success && result.data) {
+        // Handle nested response structure: { success: true, data: { organization: {...} } }
+        organizationData = result.data.organization || result.data;
       }
 
-      // Ensure the result has a name property
-      if (!result.name && formData.name) {
-        result.name = formData.name;
-        console.warn("Name missing from API response, using form data name");
+      // Fallback if we don't have proper organization data
+      if (!organizationData || !organizationData.name) {
+        console.warn(
+          "Invalid organization data in API response, using form data as fallback"
+        );
+        organizationData = {
+          ...formData,
+          id: organizationData?.id || Date.now(),
+          // Ensure we have all the form fields
+          name: formData.name,
+          workLocation: formData.workLocation,
+        };
       }
 
-      onSuccess(result, mode);
+      console.log("Final organization data to pass:", organizationData);
+      onSuccess(organizationData, mode);
     } catch (error) {
       console.error("Error saving organization:", error);
       showToast.error(`Failed to ${mode} organization. Please try again.`);

@@ -171,9 +171,11 @@ export const Organizations = () => {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button onClick={openCreateModal} className="ml-auto">
-            <Plus className="h-4 w-4 mr-2" /> Add Organization
-          </Button>
+          {viewMode === "list" && (
+            <Button onClick={openCreateModal} className="ml-auto">
+              <Plus className="h-4 w-4 mr-2" /> Add Organization
+            </Button>
+          )}
         </div>
       </div>
 
@@ -208,7 +210,7 @@ export const Organizations = () => {
         <OrganizationDetails
           organizationId={selectedOrganizationId}
           onBack={handleBackToList}
-          onEdit={(org) => openEditModal(org)}
+          onRefresh={loadOrganizations}
         />
       )}
 
