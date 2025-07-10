@@ -7,7 +7,6 @@ import { Layout } from "./components/layout/Layout";
 import { LoginPage } from "./components/auth/LoginPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { TimeSheetList } from "./components/Timesheets/TimeSheetList";
-import { NewTimesheetPage } from "./components/Timesheets/NewTimesheetPage"; // NEW: Test page for new API
 import { Users } from "./components/users/Users";
 import { Organizations } from "./components/Organization/Organizations";
 import { Customers } from "./components/Customers/Customers";
@@ -30,9 +29,6 @@ const AppContent = () => {
     switch (currentPage) {
       case "timesheets":
         return <TimeSheetList />;
-
-      case "new-timesheets":
-        return <NewTimesheetPage />; // NEW: Test page for new API
 
       case "users":
         return (

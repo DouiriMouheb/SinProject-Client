@@ -1,7 +1,4 @@
 import {
-  Home,
-  CheckSquare,
-  Ticket,
   Users,
   Settings,
   LogOut,
@@ -25,7 +22,6 @@ export const Sidebar = ({
 
   const navigation = [
     { name: "TimeSheets", icon: Hourglass, page: "timesheets" },
-    { name: "New API Test", icon: CheckSquare, page: "new-timesheets" }, // NEW: Test page for new API
 
     // Manager-level access
     ...(hasRole("manager")

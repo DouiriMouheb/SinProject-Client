@@ -85,7 +85,7 @@ const DEFAULT_COLUMNS = [
     label: "Organization",
     sortable: true,
     visible: true,
-    width: "140px",
+    width: "auto",
   },
   {
     id: "startTime",
@@ -93,7 +93,7 @@ const DEFAULT_COLUMNS = [
     label: "Start Time",
     sortable: true,
     visible: true,
-    width: "120px",
+    width: "60px",
   },
   {
     id: "endTime",
@@ -101,7 +101,7 @@ const DEFAULT_COLUMNS = [
     label: "End Time",
     sortable: true,
     visible: true,
-    width: "120px",
+    width: "60px",
   },
   {
     id: "workLocation",
@@ -109,7 +109,7 @@ const DEFAULT_COLUMNS = [
     label: "Work Location",
     sortable: false,
     visible: true,
-    width: "120px",
+    width: "60px",
   },
   {
     id: "customer",
@@ -117,7 +117,7 @@ const DEFAULT_COLUMNS = [
     label: "Customer",
     sortable: true,
     visible: true,
-    width: "140px",
+    width: "100px",
   },
   {
     id: "process",
@@ -142,7 +142,7 @@ const DEFAULT_COLUMNS = [
     label: "Notes",
     sortable: false,
     visible: true,
-    width: "180px",
+    width: "120px",
   },
 
   {
@@ -152,14 +152,6 @@ const DEFAULT_COLUMNS = [
     sortable: true,
     visible: false, // Hide total hours column
     width: "100px",
-  },
-  {
-    id: "actions",
-    key: "actions",
-    label: "Actions",
-    sortable: false,
-    visible: true,
-    width: "120px",
   },
 ];
 
@@ -402,13 +394,14 @@ export const EnhancedTimeSheetTable = ({
             <div>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
-                  <tr>
+                  {/* Desktop header */}
+                  <tr className="hidden sm:table-row">
                     {columns
                       .filter((col) => col.visible)
                       .map((col) => (
                         <th
                           key={col.id}
-                          className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                          className={`px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ${
                             col.id === "actions" ? "text-right" : ""
                           }`}
                           style={col.width ? { minWidth: col.width } : {}}
@@ -417,172 +410,221 @@ export const EnhancedTimeSheetTable = ({
                         </th>
                       ))}
                   </tr>
+                  {/* Mobile header */}
+                  <tr className="sm:hidden">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Start-End
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Process
+                    </th>
+                  </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
+                  {/* Desktop rows */}
                   {paginatedEntries.map((entry, idx) => {
                     if (!entry || (!entry.id && !entry._id)) return null;
                     const entryId = entry.id || entry._id;
                     const rowClass = idx % 2 === 0 ? "bg-white" : "bg-gray-200";
                     return (
-                      <tr
-                        key={entryId}
-                        className={`${rowClass}`}
-                        onDoubleClick={() => canEdit(entry) && onEdit(entry)}
-                        style={{
-                          cursor: canEdit(entry) ? "pointer" : undefined,
-                        }}
-                      >
-                        {columns
-                          .filter((col) => col.visible)
-                          .map((col) => {
-                            switch (col.id) {
-                              case "date":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    <div className="flex items-center text-gray-900">
-                                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                      <div className="font-medium">
-                                        {formatDate(entry.startTime)}
+                      <>
+                        {/* Desktop row */}
+                        <tr
+                          key={entryId + "-desktop"}
+                          className={`hidden sm:table-row ${rowClass}`}
+                          onClick={() => canEdit(entry) && onEdit(entry)}
+                          style={{
+                            cursor: canEdit(entry) ? "pointer" : undefined,
+                          }}
+                        >
+                          {columns
+                            .filter((col) => col.visible)
+                            .map((col) => {
+                              switch (col.id) {
+                                case "date":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      <div className="flex items-center text-gray-900 justify-center">
+                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                        <div className="font-medium">
+                                          {formatDate(entry.startTime)}
+                                        </div>
                                       </div>
-                                    </div>
-                                  </td>
-                                );
-                              case "organization":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {entry.organization?.name || "-"}
-                                  </td>
-                                );
-                              case "customer":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {getCustomerName(entry.customerId)}
-                                  </td>
-                                );
-                              case "process":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {getProcessName(entry.processId)}
-                                  </td>
-                                );
-                              case "activity":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {getActivityName(entry.activityId)}
-                                  </td>
-                                );
-                              case "workLocation":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {entry.workPlaceType || "-"}
-                                  </td>
-                                );
-                              case "notes":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm truncate max-w-xs"
-                                  >
-                                    {entry.description || "-"}
-                                  </td>
-                                );
-                              case "startTime":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {formatTime(entry.startTime)}
-                                  </td>
-                                );
-                              case "endTime":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {formatTime(entry.endTime)}
-                                  </td>
-                                );
-                              case "totalHours":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    {entry.totalHours != null
-                                      ? entry.totalHours
-                                      : "-"}
-                                  </td>
-                                );
-                              case "actions":
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm text-right w-32"
-                                  >
-                                    <div className="flex items-center justify-end space-x-2">
-                                      {canEdit(entry) && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onEdit(entry);
-                                          }}
-                                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                          title="Edit entry"
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                      {canDelete(entry) && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDelete(entryId);
-                                          }}
-                                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                          title="Delete entry"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </td>
-                                );
-                              default:
-                                return (
-                                  <td
-                                    key={col.id}
-                                    className="px-4 py-3 text-sm"
-                                  >
-                                    -
-                                  </td>
-                                );
-                            }
-                          })}
-                      </tr>
+                                    </td>
+                                  );
+                                case "organization":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {entry.organization?.name || "-"}
+                                    </td>
+                                  );
+                                case "customer":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {getCustomerName(entry.customerId)}
+                                    </td>
+                                  );
+                                case "process":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {getProcessName(entry.processId)}
+                                    </td>
+                                  );
+                                case "activity":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {getActivityName(entry.activityId)}
+                                    </td>
+                                  );
+                                case "workLocation":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {entry.workPlaceType || "-"}
+                                    </td>
+                                  );
+                                case "notes":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center truncate max-w-xs"
+                                    >
+                                      {entry.description || "-"}
+                                    </td>
+                                  );
+                                case "startTime":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {formatTime(entry.startTime)}
+                                    </td>
+                                  );
+                                case "endTime":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {formatTime(entry.endTime)}
+                                    </td>
+                                  );
+                                case "totalHours":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      {entry.totalHours != null
+                                        ? entry.totalHours
+                                        : "-"}
+                                    </td>
+                                  );
+                                case "actions":
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-right w-32"
+                                    >
+                                      <div className="flex items-center justify-end space-x-2">
+                                        {canEdit(entry) && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onEdit(entry);
+                                            }}
+                                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                            title="Edit entry"
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                        {canDelete(entry) && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onDelete(entryId);
+                                            }}
+                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            title="Delete entry"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  );
+                                default:
+                                  return (
+                                    <td
+                                      key={col.id}
+                                      className="px-4 py-3 text-sm text-center"
+                                    >
+                                      -
+                                    </td>
+                                  );
+                              }
+                            })}
+                        </tr>
+                        {/* Mobile row */}
+                        <tr
+                          key={entryId + "-mobile"}
+                          className={`sm:hidden ${rowClass}`}
+                          onClick={() => canEdit(entry) && onEdit(entry)}
+                          style={{
+                            cursor: canEdit(entry) ? "pointer" : undefined,
+                          }}
+                        >
+                          {/* Customer initials */}
+                          <td className="px-4 py-3 text-center text-base">
+                            {(() => {
+                              const name = getCustomerName(entry.customerId);
+                              if (!name || name === "Unknown Customer")
+                                return "-";
+                              const initials = name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join(".")
+                                .toUpperCase();
+                              return initials;
+                            })()}
+                          </td>
+                          {/* Start-End time */}
+                          <td className="px-4 py-3 text-center text-sm">
+                            {formatTime(entry.startTime)} -{" "}
+                            {formatTime(entry.endTime)}
+                          </td>
+                          {/* Process */}
+                          <td className="px-4 py-3 text-center text-sm">
+                            {getProcessName(entry.processId)}
+                          </td>
+                        </tr>
+                      </>
                     );
                   })}
                 </tbody>
