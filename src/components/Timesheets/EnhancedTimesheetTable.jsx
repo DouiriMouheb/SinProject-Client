@@ -69,25 +69,89 @@ const formatDuration = (hours) => {
   }
 };
 
-// Default column configuration - Only essential columns
+// Expanded column configuration to match timesheet modal fields
 const DEFAULT_COLUMNS = [
   {
     id: "date",
     key: "startTime",
     label: "Date",
     sortable: true,
-    visible: true,
-    searchable: false,
+    visible: false, // Hide date column
     width: "120px",
   },
   {
-    id: "task",
-    key: "processId",
-    label: "Process & Activity",
+    id: "organization",
+    key: "organizationId",
+    label: "Organization",
     sortable: true,
     visible: true,
-    searchable: true,
-    width: "auto",
+    width: "140px",
+  },
+  {
+    id: "startTime",
+    key: "startTime",
+    label: "Start Time",
+    sortable: true,
+    visible: true,
+    width: "120px",
+  },
+  {
+    id: "endTime",
+    key: "endTime",
+    label: "End Time",
+    sortable: true,
+    visible: true,
+    width: "120px",
+  },
+  {
+    id: "workLocation",
+    key: "workLocation",
+    label: "Work Location",
+    sortable: false,
+    visible: true,
+    width: "120px",
+  },
+  {
+    id: "customer",
+    key: "customerId",
+    label: "Customer",
+    sortable: true,
+    visible: true,
+    width: "140px",
+  },
+  {
+    id: "process",
+    key: "processId",
+    label: "Process",
+    sortable: true,
+    visible: true,
+    width: "140px",
+  },
+  {
+    id: "activity",
+    key: "activityId",
+    label: "Activity",
+    sortable: true,
+    visible: true,
+    width: "140px",
+  },
+
+  {
+    id: "notes",
+    key: "notes",
+    label: "Notes",
+    sortable: false,
+    visible: true,
+    width: "180px",
+  },
+
+  {
+    id: "totalHours",
+    key: "totalHours",
+    label: "Total Hours",
+    sortable: true,
+    visible: false, // Hide total hours column
+    width: "100px",
   },
   {
     id: "actions",
@@ -95,7 +159,6 @@ const DEFAULT_COLUMNS = [
     label: "Actions",
     sortable: false,
     visible: true,
-    searchable: false,
     width: "120px",
   },
 ];
@@ -123,7 +186,7 @@ export const EnhancedTimeSheetTable = ({
     direction: "desc",
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize] = useState(10); // Fixed page size to 10
   // Removed expandedEntry state and toggle logic
 
   // Use fixed columns - no customization
@@ -257,11 +320,45 @@ export const EnhancedTimeSheetTable = ({
   return (
     <div className="bg-white shadow-lg rounded-lg border border-gray-200">
       {/* Table Header with Search and Controls */}
-      <div className="min-w-[220px] max-w-[260px] flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
+        {/* Previous Day Button */}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const prev = new Date(selectedDate);
+            prev.setDate(prev.getDate() - 1);
+            setSelectedDate(prev);
+          }}
+          className=" border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
+          aria-label="Previous Day"
+          type="button"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        {/* Date Display with Calendar Popup */}
         <DatePicker
           selected={selectedDate}
-          onChange={(date) => setSelectedDate(date)}
-          inline
+          onChange={(date) => date && setSelectedDate(date)}
+          customInput={
+            <button
+              className="px-3 py-1 rounded-md border border-gray-300 bg-white text-gray-900 font-medium shadow hover:bg-gray-50 flex items-center gap-2"
+              style={{ minWidth: 120 }}
+              aria-label="Pick date"
+              type="button"
+            >
+              <Calendar className="h-4 w-4 text-blue-500" />
+              {selectedDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </button>
+          }
+          popperPlacement="bottom"
+          popperClassName="!z-[9999]"
           calendarClassName="!shadow-lg !rounded-xl !border !border-gray-300"
           dayClassName={(date) =>
             date.toDateString() === new Date().toDateString()
@@ -269,7 +366,24 @@ export const EnhancedTimeSheetTable = ({
               : undefined
           }
           todayButton="Today"
+          showPopperArrow={false}
         />
+        {/* Next Day Button */}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const next = new Date(selectedDate);
+            next.setDate(next.getDate() + 1);
+            setSelectedDate(next);
+          }}
+          className=" border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
+          aria-label="Next Day"
+          type="button"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
       {/* Table */}
       <div className="flex flex-row w-full gap-4">
@@ -289,80 +403,185 @@ export const EnhancedTimeSheetTable = ({
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Start - End
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Process
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {columns
+                      .filter((col) => col.visible)
+                      .map((col) => (
+                        <th
+                          key={col.id}
+                          className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                            col.id === "actions" ? "text-right" : ""
+                          }`}
+                          style={col.width ? { minWidth: col.width } : {}}
+                        >
+                          {col.label}
+                        </th>
+                      ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedEntries.map((entry) => {
+                  {paginatedEntries.map((entry, idx) => {
                     if (!entry || (!entry.id && !entry._id)) return null;
                     const entryId = entry.id || entry._id;
+                    const rowClass = idx % 2 === 0 ? "bg-white" : "bg-gray-200";
                     return (
                       <tr
                         key={entryId}
-                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        className={`${rowClass}`}
+                        onDoubleClick={() => canEdit(entry) && onEdit(entry)}
+                        style={{
+                          cursor: canEdit(entry) ? "pointer" : undefined,
+                        }}
                       >
-                        {/* Date Column */}
-                        <td className="px-4 py-3 text-sm">
-                          <div className="flex items-center text-gray-900">
-                            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                            <div className="font-medium">
-                              {formatDate(entry.startTime)}
-                            </div>
-                          </div>
-                        </td>
-                        {/* Start-End Time Column */}
-                        <td className="px-4 py-3 text-sm">
-                          {formatTime(entry.startTime)}
-                          {entry.endTime && ` - ${formatTime(entry.endTime)}`}
-                        </td>
-                        {/* Process Column */}
-                        <td className="px-4 py-3 text-sm">
-                          {getProcessName(entry.processId)}
-                        </td>
-                        {/* Actions Column */}
-                        <td className="px-4 py-3 text-sm text-right w-32">
-                          <div className="flex items-center justify-end space-x-2">
-                            {canEdit(entry) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEdit(entry);
-                                }}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title="Edit entry"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canDelete(entry) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDelete(entryId);
-                                }}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Delete entry"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+                        {columns
+                          .filter((col) => col.visible)
+                          .map((col) => {
+                            switch (col.id) {
+                              case "date":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    <div className="flex items-center text-gray-900">
+                                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                      <div className="font-medium">
+                                        {formatDate(entry.startTime)}
+                                      </div>
+                                    </div>
+                                  </td>
+                                );
+                              case "organization":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {entry.organization?.name || "-"}
+                                  </td>
+                                );
+                              case "customer":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {getCustomerName(entry.customerId)}
+                                  </td>
+                                );
+                              case "process":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {getProcessName(entry.processId)}
+                                  </td>
+                                );
+                              case "activity":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {getActivityName(entry.activityId)}
+                                  </td>
+                                );
+                              case "workLocation":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {entry.workPlaceType || "-"}
+                                  </td>
+                                );
+                              case "notes":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm truncate max-w-xs"
+                                  >
+                                    {entry.description || "-"}
+                                  </td>
+                                );
+                              case "startTime":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {formatTime(entry.startTime)}
+                                  </td>
+                                );
+                              case "endTime":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {formatTime(entry.endTime)}
+                                  </td>
+                                );
+                              case "totalHours":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    {entry.totalHours != null
+                                      ? entry.totalHours
+                                      : "-"}
+                                  </td>
+                                );
+                              case "actions":
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm text-right w-32"
+                                  >
+                                    <div className="flex items-center justify-end space-x-2">
+                                      {canEdit(entry) && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEdit(entry);
+                                          }}
+                                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                          title="Edit entry"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {canDelete(entry) && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDelete(entryId);
+                                          }}
+                                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                          title="Delete entry"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              default:
+                                return (
+                                  <td
+                                    key={col.id}
+                                    className="px-4 py-3 text-sm"
+                                  >
+                                    -
+                                  </td>
+                                );
+                            }
+                          })}
                       </tr>
                     );
                   })}
@@ -371,25 +590,6 @@ export const EnhancedTimeSheetTable = ({
               {/* Pagination and Results Info */}
               {sortedEntries.length > 0 && (
                 <div className="px-4 py-3 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center w-full">
-                    <div className="flex justify-end mt-2 sm:mt-0">
-                      <select
-                        value={pageSize}
-                        onChange={(e) => {
-                          setPageSize(Number(e.target.value));
-                          setCurrentPage(1);
-                        }}
-                        className="ml-2 text-sm border border-gray-900 rounded-full bg-white text-gray-900 px-2 py-1 shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        style={{ minWidth: 56 }}
-                      >
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                  </div>
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
                     <div className="flex items-center space-x-1 order-2 sm:order-1 mt-2 sm:mt-0">

@@ -348,20 +348,23 @@ export const TimeSheetList = () => {
         {/* Header */}
         <div className="mb-6">
           {/* Title Section */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
+          {/* <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Timesheet</h1>
               <p className="mt-2 text-sm text-gray-600">
                 Track your time and manage entries
               </p>
             </div>
-          </div>
+          </div>*/}
 
           {/* Controls Section */}
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0">
+          <div className="flex flex-col lg:flex-row lg:justify-start lg:items-start space-y-4 lg:space-y-0">
+            {" "}
             {/* View Mode Selector */}
-            <div className="flex flex-row items-center justify-center gap-2 w-full max-w-xs mx-auto mb-2">
-              <button
+            <div className="flex flex-row items-center gap-2 w-full max-w-xs mb-2">
+              {" "}
+              {/*
+                 <button
                 onClick={() => setViewMode("list")}
                 className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
                   viewMode === "list"
@@ -373,7 +376,6 @@ export const TimeSheetList = () => {
               >
                 <List className="h-4 w-4" />
               </button>
-              {/*
               <Button
                 variant={viewMode === "calendar" ? "primary" : "ghost"}
                 size="sm"

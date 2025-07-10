@@ -1,7 +1,9 @@
 // src/services/api.js - Fixed version for backend integration
 class ApiClient {
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    //this.baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    this.baseURL =
+      import.meta.env.VITE_API_URL || "http://192.168.43.205:5000/api";
     this.defaultHeaders = {
       "Content-Type": "application/json",
     };
