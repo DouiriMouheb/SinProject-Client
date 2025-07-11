@@ -183,10 +183,23 @@ export const TimeSheetList = () => {
       setLoading(true);
       setError(null);
 
-      // For calendar view and timeline view, get entries for the current date range
+      // Apply date filtering for all views to keep them in sync
       let queryParams = {};
-      if (viewMode === "calendar" || viewMode === "timeline") {
-        const dateRange = getDateRangeForView();
+      const dateRange = getDateRangeForView();
+
+      // For list and card views, use daily range (same as timeline)
+      // For calendar views, use appropriate range
+      if (
+        viewMode === "list" ||
+        viewMode === "card" ||
+        viewMode === "timeline"
+      ) {
+        // Use daily range for list, card, and timeline views
+        const date = new Date(currentDate);
+        queryParams.startDate = date.toISOString().split("T")[0];
+        queryParams.endDate = date.toISOString().split("T")[0];
+      } else {
+        // Use the calculated range for calendar views
         queryParams.startDate = dateRange.start;
         queryParams.endDate = dateRange.end;
       }
@@ -555,6 +568,8 @@ export const TimeSheetList = () => {
               customers={customers}
               loading={loading}
               viewMode={viewMode === "card" ? "card" : "table"}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
             />
           </div>
         </div>

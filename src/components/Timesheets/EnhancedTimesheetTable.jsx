@@ -171,13 +171,15 @@ export const EnhancedTimeSheetTable = ({
   organizations = [],
   customers = [],
   viewMode = "table",
+  currentDate = new Date(),
+  onDateChange = () => {},
 }) => {
-  // Table/Card state
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
+  // Table/Card state - use shared currentDate prop
+  // const [selectedDate, setSelectedDate] = useState(() => {
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0);
+  //   return today;
+  // });
   // Remove sortConfig, always sort by startTime ascending (chronological)
   // const [sortConfig, setSortConfig] = useState({
   //   key: "startTime",
@@ -230,9 +232,11 @@ export const EnhancedTimeSheetTable = ({
       if (!entry.startTime) return false;
       const entryDate = new Date(entry.startTime);
       entryDate.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(currentDate);
+      selectedDate.setHours(0, 0, 0, 0);
       return entryDate.getTime() === selectedDate.getTime();
     });
-  }, [timeEntries, selectedDate]);
+  }, [timeEntries, currentDate]);
 
   // Sort entries: always by startTime ascending (chronological)
   const sortedEntries = useMemo(() => {
@@ -264,11 +268,9 @@ export const EnhancedTimeSheetTable = ({
   // };
 
   const resetFilters = () => {
-    setSelectedDate(() => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return today;
-    });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    onDateChange(today);
     setCurrentPage(1);
   };
 
@@ -296,9 +298,9 @@ export const EnhancedTimeSheetTable = ({
           variant="ghost"
           size="sm"
           onClick={() => {
-            const prev = new Date(selectedDate);
+            const prev = new Date(currentDate);
             prev.setDate(prev.getDate() - 1);
-            setSelectedDate(prev);
+            onDateChange(prev);
           }}
           className="border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
           aria-label="Previous Day"
@@ -308,8 +310,8 @@ export const EnhancedTimeSheetTable = ({
         </Button>
         {/* Date Display with Calendar Popup */}
         <DatePicker
-          selected={selectedDate}
-          onChange={(date) => date && setSelectedDate(date)}
+          selected={currentDate}
+          onChange={(date) => date && onDateChange(date)}
           customInput={
             <button
               className="px-3 py-1 rounded-md border border-gray-300 bg-white text-gray-900 font-medium shadow hover:bg-gray-50 flex items-center gap-2"
@@ -318,7 +320,7 @@ export const EnhancedTimeSheetTable = ({
               type="button"
             >
               <Calendar className="h-4 w-4 text-blue-500" />
-              {selectedDate.toLocaleDateString("en-US", {
+              {currentDate.toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -341,9 +343,9 @@ export const EnhancedTimeSheetTable = ({
           variant="ghost"
           size="sm"
           onClick={() => {
-            const next = new Date(selectedDate);
+            const next = new Date(currentDate);
             next.setDate(next.getDate() + 1);
-            setSelectedDate(next);
+            onDateChange(next);
           }}
           className="border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
           aria-label="Next Day"

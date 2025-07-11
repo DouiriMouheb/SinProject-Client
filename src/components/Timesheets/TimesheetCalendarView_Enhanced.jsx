@@ -465,7 +465,6 @@ export const TimesheetCalendarView = ({
               >
                 <Calendar className="h-4 w-4 text-blue-500" />
                 {currentDate.toLocaleDateString("en-US", {
-                  weekday: "short",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -494,15 +493,6 @@ export const TimesheetCalendarView = ({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToToday}
-          className="text-sm font-medium"
-          type="button"
-        >
-          Today
-        </Button>
       </div>
       {/* Responsive Daily Calendar */}
       <div className="p-2">

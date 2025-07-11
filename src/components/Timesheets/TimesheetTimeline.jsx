@@ -71,7 +71,6 @@ const TimesheetTimeline = ({
                 >
                   <Calendar className="h-4 w-4 text-blue-500" />
                   {currentDate.toLocaleDateString("en-US", {
-                    weekday: "short",
                     month: "short",
                     day: "numeric",
                     year: "numeric",

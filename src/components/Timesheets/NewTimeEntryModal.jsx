@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
+import { CustomSelect } from "../common/CustomSelect";
 import { showToast } from "../../utils/toast";
 import {
   organizationService,
@@ -18,6 +19,11 @@ import {
   Calendar,
   Clock,
   MapPin,
+  X,
+  Save,
+  Trash2,
+  Plus,
+  Edit3,
 } from "lucide-react";
 
 export const NewTimeEntryModal = ({
@@ -353,291 +359,289 @@ export const NewTimeEntryModal = ({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={mode === "create" ? "Add New Time Entry" : `Edit Time Entry`}
-        size="xl"
-      >
+      <Modal isOpen={isOpen} onClose={onClose} size="form" showHeader={false}>
         {!formReady ? (
           <div className="flex flex-col items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <span className="text-gray-600">Loading entry data...</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {/* First row - Selection fields in 3 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Organization Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Building className="h-4 w-4 inline mr-2" />
-                  Organization *
-                </label>
-                <select
-                  value={formData.organizationId}
-                  onChange={(e) =>
-                    handleInputChange("organizationId", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.organizationId ? "border-red-500" : "border-gray-300"
-                  }`}
-                  disabled={loading.organizations}
-                >
-                  <option value="">Select an organization...</option>
-                  {data.organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.organizationId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.organizationId}
-                  </p>
-                )}
-              </div>
+          <form onSubmit={handleSubmit} className="">
+            {/* Form Fields */}
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Organization Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Building className="h-4 w-4 inline mr-2" />
+                    Organization *
+                  </label>
+                  <CustomSelect
+                    value={formData.organizationId}
+                    onChange={(value) =>
+                      handleInputChange("organizationId", value)
+                    }
+                    options={data.organizations.map((org) => ({
+                      value: org.id,
+                      label: org.name,
+                    }))}
+                    placeholder="Select an organization..."
+                    searchable={true}
+                    clearable={true}
+                    disabled={loading.organizations}
+                    loading={loading.organizations}
+                    error={errors.organizationId}
+                    icon={Building}
+                    emptyMessage="No organizations available"
+                  />
+                </div>
 
-              {/* Customer Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Users className="h-4 w-4 inline mr-2" />
-                  Customer *
-                </label>
-                <select
-                  value={formData.customerId}
-                  onChange={(e) =>
-                    handleInputChange("customerId", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.customerId ? "border-red-500" : "border-gray-300"
-                  }`}
-                  disabled={!formData.organizationId || loading.customers}
-                >
-                  <option value="">
-                    {!formData.organizationId
-                      ? "Select an organization first..."
-                      : loading.customers
-                      ? "Loading customers..."
-                      : "Select a customer..."}
-                  </option>
-                  {data.customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.customerId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.customerId}
-                  </p>
-                )}
-              </div>
+                {/* Customer Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Users className="h-4 w-4 inline mr-2" />
+                    Customer *
+                  </label>
+                  <CustomSelect
+                    value={formData.customerId}
+                    onChange={(value) => handleInputChange("customerId", value)}
+                    options={data.customers.map((customer) => ({
+                      value: customer.id,
+                      label: customer.name,
+                    }))}
+                    placeholder={
+                      !formData.organizationId
+                        ? "Select an organization first..."
+                        : loading.customers
+                        ? "Loading customers..."
+                        : "Select a customer..."
+                    }
+                    searchable={true}
+                    clearable={true}
+                    disabled={!formData.organizationId || loading.customers}
+                    loading={loading.customers}
+                    error={errors.customerId}
+                    icon={Users}
+                    emptyMessage="No customers available"
+                  />
+                </div>
 
-              {/* Work Location Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4 inline mr-2" />
-                  Work Location
-                </label>
-                <select
-                  value={formData.workPlaceType}
-                  onChange={(e) =>
-                    handleInputChange("workPlaceType", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="organization">Organization Location</option>
-                  <option value="customer">Customer Location</option>
-                  <option value="home">Work from Home</option>
-                </select>
+                {/* Work Location Type */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <MapPin className="h-4 w-4 inline mr-2" />
+                    Work Location
+                  </label>
+                  <CustomSelect
+                    value={formData.workPlaceType}
+                    onChange={(value) =>
+                      handleInputChange("workPlaceType", value)
+                    }
+                    options={[
+                      {
+                        value: "organization",
+                        label: "Organization Location",
+                      },
+                      { value: "customer", label: "Customer Location" },
+                      { value: "home", label: "Work from Home" },
+                    ]}
+                    placeholder="Select work location..."
+                    icon={MapPin}
+                  />
+                </div>
+
+                {/* Process Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Settings className="h-4 w-4 inline mr-2" />
+                    Process *
+                  </label>
+                  <CustomSelect
+                    value={formData.processId}
+                    onChange={(value) => handleInputChange("processId", value)}
+                    options={data.processes.map((process) => ({
+                      value: process.id,
+                      label: process.name,
+                    }))}
+                    placeholder="Select a process..."
+                    searchable={true}
+                    clearable={true}
+                    disabled={loading.processes}
+                    loading={loading.processes}
+                    error={errors.processId}
+                    icon={Settings}
+                    emptyMessage="No processes available"
+                  />
+                </div>
+
+                {/* Activity Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Activity className="h-4 w-4 inline mr-2" />
+                    Activity *
+                  </label>
+                  <CustomSelect
+                    value={formData.activityId}
+                    onChange={(value) => handleInputChange("activityId", value)}
+                    options={data.activities.map((activity) => ({
+                      value: activity.id,
+                      label: activity.name,
+                    }))}
+                    placeholder={
+                      !formData.processId
+                        ? "Select a process first..."
+                        : loading.activities
+                        ? "Loading activities..."
+                        : "Select an activity..."
+                    }
+                    searchable={true}
+                    clearable={true}
+                    disabled={!formData.processId || loading.activities}
+                    loading={loading.activities}
+                    error={errors.activityId}
+                    icon={Activity}
+                    emptyMessage="No activities available"
+                  />
+                </div>
+
+                {/* Task Name */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Task Name *
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.taskName}
+                    onChange={(e) =>
+                      handleInputChange("taskName", e.target.value)
+                    }
+                    placeholder="Enter task name"
+                    error={errors.taskName}
+                    maxLength={300}
+                  />
+                </div>
+
+                {/* Date Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Calendar className="h-4 w-4 inline mr-2" />
+                    Date *
+                  </label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => handleInputChange("date", e.target.value)}
+                    max={getMaxDate()}
+                    error={errors.date}
+                    disabled={mode === "edit"}
+                  />
+                  {mode === "edit" && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Date cannot be changed when editing
+                    </p>
+                  )}
+                </div>
+
+                {/* Start Time */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Clock className="h-4 w-4 inline mr-2" />
+                    Start Time *
+                  </label>
+                  <Input
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) =>
+                      handleInputChange("startTime", e.target.value)
+                    }
+                    error={errors.startTime}
+                  />
+                </div>
+
+                {/* End Time */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Clock className="h-4 w-4 inline mr-2" />
+                    End Time *
+                  </label>
+                  <Input
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) =>
+                      handleInputChange("endTime", e.target.value)
+                    }
+                    error={errors.endTime}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Second row - Process and Activity in 2 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Process Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Settings className="h-4 w-4 inline mr-2" />
-                  Process *
-                </label>
-                <select
-                  value={formData.processId}
-                  onChange={(e) =>
-                    handleInputChange("processId", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.processId ? "border-red-500" : "border-gray-300"
-                  }`}
-                  disabled={loading.processes}
-                >
-                  <option value="">Select a process...</option>
-                  {data.processes.map((process) => (
-                    <option key={process.id} value={process.id}>
-                      {process.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.processId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.processId}
-                  </p>
-                )}
-              </div>
-
-              {/* Activity Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Activity className="h-4 w-4 inline mr-2" />
-                  Activity *
-                </label>
-                <select
-                  value={formData.activityId}
-                  onChange={(e) =>
-                    handleInputChange("activityId", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.activityId ? "border-red-500" : "border-gray-300"
-                  }`}
-                  disabled={!formData.processId || loading.activities}
-                >
-                  <option value="">
-                    {!formData.processId
-                      ? "Select a process first..."
-                      : loading.activities
-                      ? "Loading activities..."
-                      : "Select an activity..."}
-                  </option>
-                  {data.activities.map((activity) => (
-                    <option key={activity.id} value={activity.id}>
-                      {activity.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.activityId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.activityId}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Third row - Task details in 2 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Task Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Task Name *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.taskName}
-                  onChange={(e) =>
-                    handleInputChange("taskName", e.target.value)
-                  }
-                  placeholder="Enter task name"
-                  error={errors.taskName}
-                  maxLength={300}
-                />
-              </div>
-
-              {/* Date Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="h-4 w-4 inline mr-2" />
-                  Date *
-                </label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
-                  max={getMaxDate()}
-                  error={errors.date}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  You can only add entries for today or past dates
-                </p>
-              </div>
-            </div>
-
-            {/* Fourth row - Description full width */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
+            {/* Description - Full Width */}
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Task Description
+              </h3>
               <textarea
                 value={formData.description}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
                 placeholder="Optional task description"
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
             </div>
 
-            {/* Fifth row - Time Range in 2 columns */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="h-4 w-4 inline mr-2" />
-                  Start Time *
-                </label>
-                <Input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) =>
-                    handleInputChange("startTime", e.target.value)
-                  }
-                  error={errors.startTime}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="h-4 w-4 inline mr-2" />
-                  End Time *
-                </label>
-                <Input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => handleInputChange("endTime", e.target.value)}
-                  error={errors.endTime}
-                />
-              </div>
-            </div>
-
             {/* Submit Buttons */}
-            <div className="flex justify-end space-x-2 pt-2 border-t">
-              <Button type="button" variant="secondary" onClick={onClose}>
-                Cancel
-              </Button>
-              {mode === "edit" && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="min-w-[120px]"
-                >
-                  Delete Entry
-                </Button>
-              )}
+            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <Button
-                type="submit"
-                disabled={loading.saving}
-                className="min-w-[120px]"
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+                className="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2"
+                title="Cancel"
               >
-                {loading.saving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : mode === "create" ? (
-                  "Create Entry"
-                ) : (
-                  "Update Entry"
-                )}
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Cancel</span>
               </Button>
+
+              <div className="flex space-x-2">
+                {mode === "edit" && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2"
+                    title="Delete Entry"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Delete</span>
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loading.saving}
+                  className="flex items-center justify-center w-12 h-12 sm:w-auto sm:h-auto sm:px-4 sm:py-2"
+                  title={mode === "create" ? "Create Entry" : "Update Entry"}
+                >
+                  {loading.saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span className="hidden sm:inline ml-2">Saving...</span>
+                    </>
+                  ) : mode === "create" ? (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-2">Create</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-2">Update</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         )}
@@ -647,10 +651,13 @@ export const NewTimeEntryModal = ({
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete Time Entry"
         size="sm"
+        showHeader={false}
       >
         <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Delete Time Entry
+          </h3>
           <p className="mb-4">
             Are you sure you want to delete this time entry? This action cannot
             be undone.
