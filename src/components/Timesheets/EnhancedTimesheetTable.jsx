@@ -1,5 +1,6 @@
 // src/components/Timesheets/EnhancedTimeSheetTable.jsx - Enhanced time entries table with search, pagination, and column reordering
 import React, { useState, useMemo } from "react";
+import TimesheetCard from "./TimesheetCard";
 import {
   Edit,
   Trash2,
@@ -12,7 +13,10 @@ import {
   ArrowUpDown,
   X,
   Briefcase,
+  MonitorCheck,
+  Building,
   User,
+  MapPin,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -166,20 +170,22 @@ export const EnhancedTimeSheetTable = ({
   activities = [],
   organizations = [],
   customers = [],
+  viewMode = "table",
 }) => {
-  // Table state
+  // Table/Card state
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
   });
-  const [sortConfig, setSortConfig] = useState({
-    key: "startTime",
-    direction: "desc",
-  });
+  // Remove sortConfig, always sort by startTime ascending (chronological)
+  // const [sortConfig, setSortConfig] = useState({
+  //   key: "startTime",
+  //   direction: "asc",
+  // });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10); // Fixed page size to 10
-  // Removed expandedEntry state and toggle logic
+  // viewMode and setViewMode are now controlled by parent (TimeSheetList)
 
   // Use fixed columns - no customization
   const columns = DEFAULT_COLUMNS;
@@ -228,42 +234,14 @@ export const EnhancedTimeSheetTable = ({
     });
   }, [timeEntries, selectedDate]);
 
-  // Sort entries
+  // Sort entries: always by startTime ascending (chronological)
   const sortedEntries = useMemo(() => {
-    if (!sortConfig.key) return filteredEntries;
-
-    const sorted = [...filteredEntries].sort((a, b) => {
-      const aValue = getNestedValue(a, sortConfig.key);
-      const bValue = getNestedValue(b, sortConfig.key);
-
-      if (aValue === null && bValue === null) return 0;
-      if (aValue === null) return 1;
-      if (bValue === null) return -1;
-
-      // Handle dates
-      if (sortConfig.key.includes("Time") || sortConfig.key.includes("Date")) {
-        const aDate = new Date(aValue);
-        const bDate = new Date(bValue);
-        return sortConfig.direction === "asc" ? aDate - bDate : bDate - aDate;
-      }
-
-      // Handle strings and numbers
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        const result = aValue.localeCompare(bValue);
-        return sortConfig.direction === "asc" ? result : -result;
-      }
-
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortConfig.direction === "asc"
-          ? aValue - bValue
-          : bValue - aValue;
-      }
-
-      return 0;
+    return [...filteredEntries].sort((a, b) => {
+      const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
+      const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;
+      return aTime - bTime;
     });
-
-    return sorted;
-  }, [filteredEntries, sortConfig]);
+  }, [filteredEntries]);
 
   // Paginate entries
   const paginatedEntries = useMemo(() => {
@@ -277,12 +255,13 @@ export const EnhancedTimeSheetTable = ({
   const endEntry = Math.min(currentPage * pageSize, sortedEntries.length);
 
   // Handlers
-  const handleSort = (key) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
-  };
+  // Sorting is always by startTime ascending, so handleSort is not needed
+  // const handleSort = (key) => {
+  //   setSortConfig((prev) => ({
+  //     key,
+  //     direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+  //   }));
+  // };
 
   const resetFilters = () => {
     setSelectedDate(() => {
@@ -290,7 +269,6 @@ export const EnhancedTimeSheetTable = ({
       today.setHours(0, 0, 0, 0);
       return today;
     });
-    setSortConfig({ key: "startTime", direction: "desc" });
     setCurrentPage(1);
   };
 
@@ -311,10 +289,9 @@ export const EnhancedTimeSheetTable = ({
 
   return (
     <div className="bg-white shadow-lg rounded-lg border border-gray-200">
-      {/* Table Header with Search and Controls */}
+      {/* Header with controls: Only date navigation here */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
         {/* Previous Day Button */}
-
         <Button
           variant="ghost"
           size="sm"
@@ -323,13 +300,12 @@ export const EnhancedTimeSheetTable = ({
             prev.setDate(prev.getDate() - 1);
             setSelectedDate(prev);
           }}
-          className=" border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
+          className="border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
           aria-label="Previous Day"
           type="button"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-
         {/* Date Display with Calendar Popup */}
         <DatePicker
           selected={selectedDate}
@@ -361,7 +337,6 @@ export const EnhancedTimeSheetTable = ({
           showPopperArrow={false}
         />
         {/* Next Day Button */}
-
         <Button
           variant="ghost"
           size="sm"
@@ -370,18 +345,15 @@ export const EnhancedTimeSheetTable = ({
             next.setDate(next.getDate() + 1);
             setSelectedDate(next);
           }}
-          className=" border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
+          className="border border-gray-300 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
           aria-label="Next Day"
           type="button"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-      {/* Table */}
+      {/* Content */}
       <div className="flex flex-row w-full gap-4">
-        {/* Calendar column */}
-
-        {/* Table column */}
         <div className="flex-1 overflow-x-auto">
           {sortedEntries.length === 0 ? (
             <div className="p-8 text-center">
@@ -390,249 +362,354 @@ export const EnhancedTimeSheetTable = ({
                 No time entries found
               </h3>
             </div>
-          ) : (
-            <div>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  {/* Desktop header */}
-                  <tr className="hidden sm:table-row">
-                    {columns
-                      .filter((col) => col.visible)
-                      .map((col) => (
-                        <th
-                          key={col.id}
-                          className={`px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                            col.id === "actions" ? "text-right" : ""
-                          }`}
-                          style={col.width ? { minWidth: col.width } : {}}
-                        >
-                          {col.label}
-                        </th>
-                      ))}
-                  </tr>
-                  {/* Mobile header */}
-                  <tr className="sm:hidden">
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Start-End
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Process
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {/* Desktop rows */}
-                  {paginatedEntries.map((entry, idx) => {
-                    if (!entry || (!entry.id && !entry._id)) return null;
-                    const entryId = entry.id || entry._id;
-                    const rowClass = idx % 2 === 0 ? "bg-white" : "bg-gray-200";
-                    return (
-                      <>
-                        {/* Desktop row */}
-                        <tr
-                          key={entryId + "-desktop"}
-                          className={`hidden sm:table-row ${rowClass}`}
-                          onClick={() => canEdit(entry) && onEdit(entry)}
-                          style={{
-                            cursor: canEdit(entry) ? "pointer" : undefined,
-                          }}
-                        >
-                          {columns
-                            .filter((col) => col.visible)
-                            .map((col) => {
-                              switch (col.id) {
-                                case "date":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      <div className="flex items-center text-gray-900 justify-center">
-                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                        <div className="font-medium">
-                                          {formatDate(entry.startTime)}
-                                        </div>
-                                      </div>
-                                    </td>
-                                  );
-                                case "organization":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {entry.organization?.name || "-"}
-                                    </td>
-                                  );
-                                case "customer":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {getCustomerName(entry.customerId)}
-                                    </td>
-                                  );
-                                case "process":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {getProcessName(entry.processId)}
-                                    </td>
-                                  );
-                                case "activity":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {getActivityName(entry.activityId)}
-                                    </td>
-                                  );
-                                case "workLocation":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {entry.workPlaceType || "-"}
-                                    </td>
-                                  );
-                                case "notes":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center truncate max-w-xs"
-                                    >
-                                      {entry.description || "-"}
-                                    </td>
-                                  );
-                                case "startTime":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {formatTime(entry.startTime)}
-                                    </td>
-                                  );
-                                case "endTime":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {formatTime(entry.endTime)}
-                                    </td>
-                                  );
-                                case "totalHours":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      {entry.totalHours != null
-                                        ? entry.totalHours
-                                        : "-"}
-                                    </td>
-                                  );
-                                case "actions":
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-right w-32"
-                                    >
-                                      <div className="flex items-center justify-end space-x-2">
-                                        {canEdit(entry) && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              onEdit(entry);
-                                            }}
-                                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                            title="Edit entry"
-                                          >
-                                            <Edit className="h-4 w-4" />
-                                          </Button>
-                                        )}
-                                        {canDelete(entry) && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              onDelete(entryId);
-                                            }}
-                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                            title="Delete entry"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  );
-                                default:
-                                  return (
-                                    <td
-                                      key={col.id}
-                                      className="px-4 py-3 text-sm text-center"
-                                    >
-                                      -
-                                    </td>
-                                  );
+          ) : viewMode === "table" ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr className="hidden sm:table-row">
+                  {columns
+                    .filter((col) => col.visible)
+                    .map((col) => (
+                      <th
+                        key={col.id}
+                        className={`px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                          col.id === "actions" ? "text-right" : ""
+                        }`}
+                        style={col.width ? { minWidth: col.width } : {}}
+                      >
+                        {col.label}
+                      </th>
+                    ))}
+                </tr>
+                <tr className="sm:hidden">
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Start-End
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Process
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedEntries.map((entry, idx) => {
+                  if (!entry || (!entry.id && !entry._id)) return null;
+                  const entryId = entry.id || entry._id;
+                  const rowClass = idx % 2 === 0 ? "bg-white" : "bg-gray-200";
+                  return [
+                    // Desktop row
+                    <tr
+                      key={entryId + "-desktop"}
+                      className={`hidden sm:table-row ${rowClass}`}
+                      onClick={() => canEdit(entry) && onEdit(entry)}
+                      style={{
+                        cursor: canEdit(entry) ? "pointer" : undefined,
+                      }}
+                    >
+                      {columns
+                        .filter((col) => col.visible)
+                        .map((col) => {
+                          switch (col.id) {
+                            case "date":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  <div className="flex items-center text-gray-900 justify-center">
+                                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                    <div className="font-medium">
+                                      {formatDate(entry.startTime)}
+                                    </div>
+                                  </div>
+                                </td>
+                              );
+                            case "organization":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {entry.organization?.name || "-"}
+                                </td>
+                              );
+                            case "customer":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {getCustomerName(entry.customerId)}
+                                </td>
+                              );
+                            case "process":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {getProcessName(entry.processId)}
+                                </td>
+                              );
+                            case "activity":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {getActivityName(entry.activityId)}
+                                </td>
+                              );
+                            case "workLocation":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {entry.workPlaceType || "-"}
+                                </td>
+                              );
+                            case "notes":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center truncate max-w-xs"
+                                >
+                                  {entry.description || "-"}
+                                </td>
+                              );
+                            case "startTime":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {formatTime(entry.startTime)}
+                                </td>
+                              );
+                            case "endTime":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {formatTime(entry.endTime)}
+                                </td>
+                              );
+                            case "totalHours":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  {entry.totalHours != null
+                                    ? entry.totalHours
+                                    : "-"}
+                                </td>
+                              );
+                            case "actions":
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-right w-32"
+                                >
+                                  <div className="flex items-center justify-end space-x-2">
+                                    {canEdit(entry) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onEdit(entry);
+                                        }}
+                                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        title="Edit entry"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    {canDelete(entry) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onDelete(entryId);
+                                        }}
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        title="Delete entry"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </td>
+                              );
+                            default:
+                              return (
+                                <td
+                                  key={col.id}
+                                  className="px-4 py-3 text-sm text-center"
+                                >
+                                  -
+                                </td>
+                              );
+                          }
+                        })}
+                    </tr>,
+                    // Mobile row
+                    <tr
+                      key={entryId + "-mobile"}
+                      className={`sm:hidden ${rowClass}`}
+                      onClick={() => canEdit(entry) && onEdit(entry)}
+                      style={{
+                        cursor: canEdit(entry) ? "pointer" : undefined,
+                      }}
+                    >
+                      <td className="px-4 py-3 text-center text-base">
+                        {(() => {
+                          const name = getCustomerName(entry.customerId);
+                          if (!name || name === "Unknown Customer") return "-";
+                          const initials = name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join(".")
+                            .toUpperCase();
+                          return initials;
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {formatTime(entry.startTime)} -{" "}
+                        {formatTime(entry.endTime)}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {getProcessName(entry.processId)}
+                      </td>
+                    </tr>,
+                  ];
+                })}
+                {/* Pagination and Results Info for table view */}
+                {sortedEntries.length > 0 && (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="px-4 py-3 border-t border-gray-200"
+                    >
+                      {totalPages > 1 && (
+                        <div className="flex items-center space-x-1 order-2 sm:order-1 mt-2 sm:mt-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronsLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage((prev) => Math.max(1, prev - 1))
+                            }
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <div className="flex items-center space-x-1">
+                            {Array.from(
+                              { length: Math.min(5, totalPages) },
+                              (_, i) => {
+                                let pageNum;
+                                if (totalPages <= 5) {
+                                  pageNum = i + 1;
+                                } else if (currentPage <= 3) {
+                                  pageNum = i + 1;
+                                } else if (currentPage >= totalPages - 2) {
+                                  pageNum = totalPages - 4 + i;
+                                } else {
+                                  pageNum = currentPage - 2 + i;
+                                }
+                                if (pageNum < 1 || pageNum > totalPages)
+                                  return null;
+                                return (
+                                  <Button
+                                    key={pageNum}
+                                    variant={
+                                      pageNum === currentPage
+                                        ? "primary"
+                                        : "ghost"
+                                    }
+                                    size="sm"
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`h-8 w-8 p-0 ${
+                                      pageNum === currentPage
+                                        ? "bg-blue-100 text-blue-700"
+                                        : ""
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </Button>
+                                );
                               }
-                            })}
-                        </tr>
-                        {/* Mobile row */}
-                        <tr
-                          key={entryId + "-mobile"}
-                          className={`sm:hidden ${rowClass}`}
-                          onClick={() => canEdit(entry) && onEdit(entry)}
-                          style={{
-                            cursor: canEdit(entry) ? "pointer" : undefined,
-                          }}
-                        >
-                          {/* Customer initials */}
-                          <td className="px-4 py-3 text-center text-base">
-                            {(() => {
-                              const name = getCustomerName(entry.customerId);
-                              if (!name || name === "Unknown Customer")
-                                return "-";
-                              const initials = name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join(".")
-                                .toUpperCase();
-                              return initials;
-                            })()}
-                          </td>
-                          {/* Start-End time */}
-                          <td className="px-4 py-3 text-center text-sm">
-                            {formatTime(entry.startTime)} -{" "}
-                            {formatTime(entry.endTime)}
-                          </td>
-                          {/* Process */}
-                          <td className="px-4 py-3 text-center text-sm">
-                            {getProcessName(entry.processId)}
-                          </td>
-                        </tr>
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {/* Pagination and Results Info */}
-              {sortedEntries.length > 0 && (
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage((prev) =>
+                                Math.min(totalPages, prev + 1)
+                              )
+                            }
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronsRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          ) : (
+            // Card view
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
+                {paginatedEntries.map((entry) => (
+                  <TimesheetCard
+                    key={entry.id || entry._id}
+                    entry={entry}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    getCustomerName={getCustomerName}
+                    getProcessName={getProcessName}
+                    getActivityName={getActivityName}
+                    getOrganizationName={getOrganizationName}
+                    formatDate={formatDate}
+                    formatTime={formatTime}
+                    formatDuration={formatDuration}
+                  />
+                ))}
+              </div>
+              {/* Pagination for card view */}
+              {viewMode === "card" && sortedEntries.length > 0 && (
                 <div className="px-4 py-3 border-t border-gray-200">
-                  {/* Pagination Controls */}
                   {totalPages > 1 && (
                     <div className="flex items-center space-x-1 order-2 sm:order-1 mt-2 sm:mt-0">
                       <Button
@@ -655,7 +732,6 @@ export const EnhancedTimeSheetTable = ({
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      {/* Page Numbers */}
                       <div className="flex items-center space-x-1">
                         {Array.from(
                           { length: Math.min(5, totalPages) },
@@ -718,7 +794,7 @@ export const EnhancedTimeSheetTable = ({
                   )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

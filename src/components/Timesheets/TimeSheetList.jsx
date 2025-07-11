@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Play,
   Clock,
+  CalendarDays,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../common/Button";
@@ -17,6 +19,8 @@ import { ConfirmationModal } from "../common/ConfirmationModal";
 import { EnhancedTimeSheetTable } from "./EnhancedTimesheetTable";
 import { NewTimeEntryModal } from "./NewTimeEntryModal";
 import { TimesheetCalendarView } from "./TimesheetCalendarView";
+import { TimesheetCalendarView as TimesheetCalendarLandView } from "./TimesheetCalendarView_Enhanced";
+import TimesheetTimeline from "./TimesheetTimeline";
 import { timesheetService } from "../../services/timesheets";
 import { processService } from "../../services/processes";
 import { organizationService } from "../../services/organizations";
@@ -34,7 +38,8 @@ export const TimeSheetList = () => {
   const [modalMode, setModalMode] = useState("create");
 
   // View states
-  const [viewMode, setViewMode] = useState("list"); // "list", "calendar"
+  // "list" = table, "card" = card, "calendar" = month calendar, "calendarLand" = calendar landscape view, "timeline" = timeline view
+  const [viewMode, setViewMode] = useState("list");
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Data for dropdowns
@@ -178,9 +183,9 @@ export const TimeSheetList = () => {
       setLoading(true);
       setError(null);
 
-      // For calendar view, get entries for the current month
+      // For calendar view and timeline view, get entries for the current date range
       let queryParams = {};
-      if (viewMode === "calendar") {
+      if (viewMode === "calendar" || viewMode === "timeline") {
         const dateRange = getDateRangeForView();
         queryParams.startDate = dateRange.start;
         queryParams.endDate = dateRange.end;
@@ -214,6 +219,7 @@ export const TimeSheetList = () => {
 
     switch (viewMode) {
       case "daily":
+      case "timeline":
         return {
           start: date.toISOString().split("T")[0],
           end: date.toISOString().split("T")[0],
@@ -362,30 +368,7 @@ export const TimeSheetList = () => {
             {" "}
             {/* View Mode Selector */}
             <div className="flex flex-row items-center gap-2 w-full max-w-xs mb-2">
-              {" "}
-              {/*
-                 <button
-                onClick={() => setViewMode("list")}
-                className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === "list"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-                style={{ minWidth: 0 }}
-                aria-label="List View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <Button
-                variant={viewMode === "calendar" ? "primary" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("calendar")}
-                className="h-8 w-8 p-0"
-                title="Calendar view"
-              >
-                <Calendar className="h-4 w-4" />
-              </Button>
-              */}
+              {/* Refresh Button */}
               <Button
                 onClick={loadTimeEntries}
                 variant="secondary"
@@ -397,12 +380,61 @@ export const TimeSheetList = () => {
                   className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
                 />
               </Button>
+              {/* Add Time Entry Button */}
               <Button
                 onClick={() => openTimeEntryModal("create")}
                 className="px-2 py-1"
                 aria-label="New Entry"
               >
                 <Plus className="h-4 w-4" />
+              </Button>
+              {/* Table View Toggle */}
+              <Button
+                variant={viewMode === "list" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className={
+                  viewMode === "list" ? "bg-blue-100 text-blue-700" : ""
+                }
+                title="Table View"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              {/* Card View Toggle */}
+              <Button
+                variant={viewMode === "card" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className={
+                  viewMode === "card" ? "bg-blue-100 text-blue-700" : ""
+                }
+                title="Card View"
+              >
+                <Clock className="h-4 w-4" />
+              </Button>
+              {/* Calendar Landscape View Toggle */}
+              <Button
+                variant={viewMode === "calendarLand" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("calendarLand")}
+                className={
+                  viewMode === "calendarLand" ? "bg-blue-100 text-blue-700" : ""
+                }
+                title="Calendar Landscape View"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </Button>
+              {/* Timeline View Toggle */}
+              <Button
+                variant={viewMode === "timeline" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("timeline")}
+                className={
+                  viewMode === "timeline" ? "bg-blue-100 text-blue-700" : ""
+                }
+                title="Timeline View"
+              >
+                <BarChart3 className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -426,35 +458,106 @@ export const TimeSheetList = () => {
           </div>
         )}
 
-        {/* Time Entries View */}
-        {viewMode === "calendar" ? (
-          <TimesheetCalendarView
-            timeEntries={timeEntries}
-            currentDate={currentDate}
-            onDateChange={setCurrentDate}
-            onAddEntry={(dateInfo) =>
-              openTimeEntryModal("create", null, dateInfo)
-            }
-            onEditEntry={(entry) => openTimeEntryModal("edit", entry)}
-            onDeleteEntry={handleDeleteRequest}
-            processes={processes}
-            activities={activities}
-            organizations={organizations}
-            customers={customers}
-            loading={loading}
-          />
-        ) : (
-          <EnhancedTimeSheetTable
-            timeEntries={timeEntries}
-            onEdit={(entry) => openTimeEntryModal("edit", entry)}
-            onDelete={handleDeleteRequest}
-            processes={processes}
-            activities={activities}
-            organizations={organizations}
-            customers={customers}
-            loading={loading}
-          />
-        )}
+        {/* Time Entries View - All views mounted, only one visible for smooth transitions */}
+        <div style={{ position: "relative" }}>
+          <div style={{ display: viewMode === "calendar" ? "block" : "none" }}>
+            <TimesheetCalendarView
+              timeEntries={timeEntries}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+              onAddEntry={(dateInfo) =>
+                openTimeEntryModal("create", null, dateInfo)
+              }
+              onEditEntry={(entry) => openTimeEntryModal("edit", entry)}
+              onDeleteEntry={handleDeleteRequest}
+              processes={processes}
+              activities={activities}
+              organizations={organizations}
+              customers={customers}
+              loading={loading}
+            />
+          </div>
+          <div
+            style={{ display: viewMode === "calendarLand" ? "block" : "none" }}
+          >
+            <TimesheetCalendarLandView
+              timeEntries={timeEntries}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+              onAddEntry={(dateInfo) =>
+                openTimeEntryModal("create", null, dateInfo)
+              }
+              onEditEntry={(entry) => openTimeEntryModal("edit", entry)}
+              onDeleteEntry={handleDeleteRequest}
+              processes={processes}
+              activities={activities}
+              organizations={organizations}
+              customers={customers}
+              loading={loading}
+            />
+          </div>
+          <div style={{ display: viewMode === "timeline" ? "block" : "none" }}>
+            <TimesheetTimeline
+              entries={timeEntries}
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+              onEdit={(entry) => openTimeEntryModal("edit", entry)}
+              canEdit={() => true}
+              getCustomerName={(customerId) => {
+                const customer = customers.find(
+                  (c) => (c.id || c._id) === customerId
+                );
+                return customer ? customer.name : "Unknown Customer";
+              }}
+              getOrganizationName={(organizationId) => {
+                const organization = organizations.find(
+                  (o) => (o.id || o._id) === organizationId
+                );
+                return organization
+                  ? organization.name
+                  : "Unknown Organization";
+              }}
+              getActivityName={(activityId) => {
+                const activity = activities.find(
+                  (a) => (a.id || a._id) === activityId
+                );
+                return activity ? activity.name : "Unknown Activity";
+              }}
+              formatTime={(timeString) => {
+                if (!timeString) return "";
+                const date = new Date(timeString);
+                return date.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                });
+              }}
+              containerHeight={600}
+            />
+          </div>
+          <div
+            style={{
+              display:
+                viewMode !== "calendar" &&
+                viewMode !== "calendarLand" &&
+                viewMode !== "timeline"
+                  ? "block"
+                  : "none",
+            }}
+          >
+            <EnhancedTimeSheetTable
+              timeEntries={timeEntries}
+              onEdit={(entry) => openTimeEntryModal("edit", entry)}
+              onDelete={handleDeleteRequest}
+              processes={processes}
+              activities={activities}
+              organizations={organizations}
+              customers={customers}
+              loading={loading}
+              viewMode={viewMode === "card" ? "card" : "table"}
+            />
+          </div>
+        </div>
 
         {/* Time Entry Modal */}
         <NewTimeEntryModal
